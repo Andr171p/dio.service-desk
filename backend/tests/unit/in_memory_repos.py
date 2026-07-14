@@ -11,7 +11,7 @@ from src.notifications.domain.entities import Notification, UserPreference
 from src.notifications.domain.vo import NotificationType
 from src.products.domain.entities import SoftwareProduct
 from src.projects.domain.entities import Project, ProjectMember
-from src.projects.domain.vo import ProjectKey, ProjectRole
+from src.projects.domain.vo import ProjectKey, MemberRole
 from src.shared.infra.repos import InMemoryRepository
 from src.shared.schemas import Page, Pagination
 from src.shared.utils.time import current_datetime
@@ -88,7 +88,7 @@ class InMemoryTokenBlacklist:
         if ttl <= 0:
             return False
 
-        self.data[jti] = {"revoked_at": current_datetime(), "user_id": user_id, "reason": reason}
+        self.data[jti] = {"revoked_at": current_datetime(), "author_id": user_id, "reason": reason}
         return True
 
     async def is_revoked(self, jti: UUID) -> bool:
@@ -123,7 +123,7 @@ class InMemoryMembershipRepository(InMemoryRepository[ProjectMember]):
             self,
             pagination: Pagination,
             project_id: UUID | None = None,
-            include_project_roles: list[ProjectRole] | None = None,
+            include_project_roles: list[MemberRole] | None = None,
     ) -> Page[ProjectMember]:
         all_memberships = list(self.data.values())
 

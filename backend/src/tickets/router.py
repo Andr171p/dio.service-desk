@@ -4,22 +4,25 @@ from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query, status
 
-from src.iam.dependencies import CurrentSubjectDep, CurrentUserDep, get_current_user
+from src.activity_logs.dependencies import ActivityLogPaginatorFunc, get_activity_logs_paginator
+from src.activity_logs.schemas import ActivityLogResponse
+from src.iam.dependencies import (
+    CurrentSubjectDep,
+    CurrentUserDep,
+    get_current_subject,
+)
 from src.shared.dependencies import PaginationDep
-from src.shared.domain.exceptions import NotFoundError
 from src.shared.schemas import Page
 
 from .dependencies import (
-    CommentServiceDep,
-    ReactionServiceDep,
-    TicketFiltersDep,
     TicketQueryServiceDep,
-    TicketRepoDep,
     TicketServiceDep,
+    get_ticket_or_404,
+    paginate_tickets,
 )
+from .domain.activity_logs import AGGREGATE_TYPE
 from .domain.vo import ReactionType
 from .infra.ai import suggest_ticket_fields
-from .mappers import map_ticket_to_response
 from .schemas import (
     CommentCreate,
     CommentEdit,
@@ -30,6 +33,7 @@ from .schemas import (
     TicketAssign,
     TicketCreate,
     TicketEdit,
+    TicketParticipant,
     TicketPredict,
     TicketResponse,
     TicketViewResponse,
@@ -54,38 +58,38 @@ async def create_ticket(
     path="",
     status_code=status.HTTP_200_OK,
     response_model=Page[TicketViewResponse],
-    summary="Фильтрация тикетов с пагинацией",
-    description="Фильтрует тикеты учитывая роль пользователя",
-    responses={
-        200: {"description": "Фильтры успешно применены и получен результат"},
-        403: {"description": "Недостаточно прав на указанную фильтрацию"}
-    }
+    dependencies=[Depends(get_current_subject)],
+    summary="Получить список тикетов",
+    description="Обогащает информацией об пользователях, контрагентах и проектах",
 )
 async def get_tickets(
-        current_user: CurrentUserDep,
-        pagination: PaginationDep,
-        filters: TicketFiltersDep,
-        service: TicketQueryServiceDep,
+        tickets: Page[TicketViewResponse] = Depends(paginate_tickets),
 ) -> Page[TicketViewResponse]:
-    return await service.get_tickets(
-        current_user=current_user,
-        pagination=pagination,
-        filters=filters,
-    )
+    return tickets
 
 
 @router.get(
     path="/{ticket_id}",
     status_code=status.HTTP_200_OK,
     response_model=TicketResponse,
-    dependencies=[Depends(get_current_user)],
-    summary="Получение тикета по его ID",
+    dependencies=[Depends(get_current_subject)],
+    summary="Получить заявку",
 )
-async def get_ticket(ticket_id: UUID, repository: TicketRepoDep) -> TicketResponse:
-    ticket = await repository.read(ticket_id)
-    if ticket is None:
-        raise NotFoundError(f"Ticket with ID {ticket_id} not found")
-    return map_ticket_to_response(ticket)
+async def get_ticket(ticket: TicketResponse = Depends(get_ticket_or_404)) -> TicketResponse:
+    return ticket
+
+
+@router.get(
+    path="/{ticket_id}/participants",
+    status_code=status.HTTP_200_OK,
+    response_model=list[TicketParticipant],
+    dependencies=[Depends(get_current_subject)],
+    summary="Получить участников заявки",
+)
+async def get_ticket_participants(
+        ticket_id: UUID, service: TicketQueryServiceDep,
+) -> list[TicketParticipant]:
+    return await service.get_ticket_participants(ticket_id)
 
 
 @router.patch(
@@ -138,6 +142,21 @@ async def delete_ticket(
 
 
 @router.get(
+    path="/{ticket_id}/history",
+    status_code=status.HTTP_200_OK,
+    response_model=Page[ActivityLogResponse],
+    dependencies=[Depends(get_current_subject)],
+    summary="Получить историю бизнес действий",
+    description="Журнал всех зарегистрированные события над заявкой"
+)
+async def get_ticket_history(
+        ticket_id: UUID,
+        paginator: ActivityLogPaginatorFunc = Depends(get_activity_logs_paginator),
+) -> Page[ActivityLogResponse]:
+    return await paginator(AGGREGATE_TYPE, ticket_id)
+
+
+@router.get(
     path="/{ticket_id}/comments",
     status_code=status.HTTP_200_OK,
     response_model=Page[CommentWithReactionsResponse],
@@ -155,7 +174,7 @@ async def get_ticket_comments(
     return await service.get_comments(
         ticket_id=ticket_id,
         pagination=pagination,
-        current_user=current_user,
+        current_subject=current_user,
         include_internal=include_internal,
     )
 
@@ -178,7 +197,7 @@ async def get_comment_replies(
     return await service.get_comment_replies(
         comment_id=comment_id,
         pagination=pagination,
-        current_user=current_user,
+        current_subject=current_user,
         include_internal=include_internal,
     )
 
@@ -215,7 +234,7 @@ async def add_comment_reply(
         ticket_id=ticket_id,
         parent_comment_id=comment_id,
         data=data,
-        current_user=current_user,
+        current_subject=current_user,
     )
 
 

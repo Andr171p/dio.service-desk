@@ -1,0 +1,256 @@
+from io import BytesIO
+from uuid import UUID
+
+from fastapi import APIRouter, status
+from fastapi.responses import StreamingResponse
+
+from src.iam.dependencies import CurrentSubjectDep
+
+from ..dependencies import ProjectServiceDep, ProjectStageExportServiceDep
+from ..exporters import (
+    export_project_stages_to_excel,
+    export_project_stages_to_pdf,
+    export_project_stages_to_word,
+)
+from ..schemas import (
+    NewProjectStagesOrder,
+    ProjectResponse,
+    ProjectStageCreate,
+    ProjectStagePlan,
+    ProjectStageResponse,
+    ProjectStageUpdate,
+)
+
+router = APIRouter(prefix="/projects", tags=["Этапы проекта"])
+
+
+def _export_response(
+    content: bytes,
+    filename: str,
+    media_type: str,
+) -> StreamingResponse:
+    return StreamingResponse(
+        BytesIO(content),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
+
+
+@router.post(
+    path="/{project_id}/stages",
+    status_code=status.HTTP_201_CREATED,
+    response_model=ProjectResponse,
+    summary="Создать этап проекта",
+)
+async def create_project_stage(
+    project_id: UUID,
+    data: ProjectStageCreate,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectResponse:
+    return await service.add_stage(project_id, data, current_subject)
+
+
+@router.get(
+    path="/{project_id}/stages/export/excel",
+    status_code=status.HTTP_200_OK,
+    summary="Экспортировать этапы проекта в Excel",
+)
+async def export_project_stages_excel(
+    project_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectStageExportServiceDep,
+) -> StreamingResponse:
+    report = await service.build_report(
+        project_id=project_id,
+        current_subject=current_subject,
+    )
+
+    return _export_response(
+        content=export_project_stages_to_excel(report),
+        filename=f"project-stages-{report.project_key}.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@router.get(
+    path="/{project_id}/stages/export/pdf",
+    status_code=status.HTTP_200_OK,
+    summary="Экспортировать этапы проекта в PDF",
+)
+async def export_project_stages_pdf(
+    project_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectStageExportServiceDep,
+) -> StreamingResponse:
+    report = await service.build_report(
+        project_id=project_id,
+        current_subject=current_subject,
+    )
+
+    return _export_response(
+        content=export_project_stages_to_pdf(report),
+        filename=f"project-stages-{report.project_key}.pdf",
+        media_type="application/pdf",
+    )
+
+
+@router.get(
+    path="/{project_id}/stages/export/word",
+    status_code=status.HTTP_200_OK,
+    summary="Экспортировать этапы проекта в Word",
+)
+async def export_project_stages_word(
+    project_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectStageExportServiceDep,
+) -> StreamingResponse:
+    report = await service.build_report(
+        project_id=project_id,
+        current_subject=current_subject,
+    )
+
+    return _export_response(
+        content=export_project_stages_to_word(report),
+        filename=f"project-stages-{report.project_key}.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+
+@router.patch(
+    path="/{project_id}/stages/{stage_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectStageResponse,
+    summary="Обновить этап проекта",
+)
+async def update_project_stage(
+    project_id: UUID,
+    stage_id: UUID,
+    current_subject: CurrentSubjectDep,
+    data: ProjectStageUpdate,
+    service: ProjectServiceDep,
+) -> ProjectStageResponse:
+    return await service.edit_stage(
+        project_id=project_id,
+        stage_id=stage_id,
+        data=data,
+        current_subject=current_subject,
+    )
+
+
+@router.patch(
+    path="/{project_id}/stages/order",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectResponse,
+    summary="Изменить порядок проведения этапов",
+)
+async def reorder_project_stages(
+    project_id: UUID,
+    new_order: NewProjectStagesOrder,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectResponse:
+    return await service.reorder_stages(
+        project_id=project_id,
+        new_order=new_order,
+        current_subject=current_subject,
+    )
+
+
+@router.delete(
+    path="/{project_id}/stages/{stage_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectResponse,
+    summary="Удалить этап из проекта",
+)
+async def delete_project_stage(
+    project_id: UUID,
+    stage_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectResponse:
+    return await service.remove_stage(
+        project_id=project_id,
+        stage_id=stage_id,
+        current_subject=current_subject,
+    )
+
+
+@router.post(
+    path="/{project_id}/stages/{stage_id}/start",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectResponse,
+    summary="Начать этап проекта",
+)
+async def start_project_stage(
+    project_id: UUID,
+    stage_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectResponse:
+    return await service.start_stage(
+        project_id=project_id,
+        stage_id=stage_id,
+        current_subject=current_subject,
+    )
+
+
+@router.post(
+    path="/{project_id}/stages/{stage_id}/complete",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectResponse,
+    summary="Завершить этап проекта",
+)
+async def complete_project_stage(
+    project_id: UUID,
+    stage_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectResponse:
+    return await service.complete_stage(
+        project_id=project_id,
+        stage_id=stage_id,
+        current_subject=current_subject,
+    )
+
+
+@router.post(
+    path="/{project_id}/stages/{stage_id}/skip",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectResponse,
+    summary="Пропустить этап проекта",
+)
+async def skip_project_stage(
+    project_id: UUID,
+    stage_id: UUID,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectResponse:
+    return await service.skip_stage(
+        project_id=project_id,
+        stage_id=stage_id,
+        current_subject=current_subject,
+    )
+
+
+@router.patch(
+    path="/{project_id}/stages/{stage_id}/schedule",
+    status_code=status.HTTP_200_OK,
+    response_model=ProjectStageResponse,
+    summary="Запланировать проведение этапа",
+)
+async def schedule_project_stage(
+    project_id: UUID,
+    stage_id: UUID,
+    data: ProjectStagePlan,
+    current_subject: CurrentSubjectDep,
+    service: ProjectServiceDep,
+) -> ProjectStageResponse:
+    return await service.schedule_stage(
+        project_id=project_id,
+        stage_id=stage_id,
+        data=data,
+        current_subject=current_subject,
+    )

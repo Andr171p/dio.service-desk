@@ -1,35 +1,52 @@
 from typing import ClassVar, Self
 
 import re
-from dataclasses import dataclass, field
-from enum import StrEnum
+from dataclasses import dataclass
+from enum import StrEnum, auto
 
-from ...projects.domain.vo import ProjectKey
-from ...shared.domain.vo import ValueObject
-from ...shared.utils.text import get_latin_slug
-from ...shared.utils.time import current_datetime
+from src.projects.domain.vo import ProjectKey
+from src.shared.domain.vo import ValueObject
+from src.shared.utils.text import get_latin_slug
+from src.shared.utils.time import current_datetime
+
+
+class TicketAction(StrEnum):
+    """Действия меняющие состояние заявки."""
+
+    EDIT = auto()
+    ASSIGN = auto()
+    START_PROGRESS = auto()
+    PAUSE = auto()
+    RESOLVE = auto()
+    CLOSE = auto()
+    REOPEN = auto()
+    CANCEL = auto()
+    APPROVE = auto()
+    SUBMIT_FOR_APPROVAL = auto()
+    REJECT = auto()
 
 
 class TicketStatus(StrEnum):
     """Возможные статусы тикета"""
 
     # Начальные статусы
-    NEW = "Новый"
-    PENDING_APPROVAL = "На согласовании"
+    NEW = auto()
+    PENDING_APPROVAL = auto()
 
     # Рабочие статусы
-    OPEN = "Открыт"
-    IN_PROGRESS = "В работе"
-    WAITING = "Ожидает ответа"
+    OPEN = auto()
+    IN_PROGRESS = auto()
+    WAITING = auto()
+    PAUSED = auto()
 
     # Завершающие статусы
-    RESOLVED = "Решён"
-    CLOSED = "Закрыт"
-    REOPENED = "Переоткрыт"
+    RESOLVED = auto()
+    CLOSED = auto()
+    REOPENED = auto()
 
     # Дополнительные
-    REJECTED = "Отклонён"
-    CANCELED = "Отменён"
+    REJECTED = auto()
+    CANCELED = auto()
 
 
 class TicketType(StrEnum):
@@ -48,37 +65,6 @@ class TicketType(StrEnum):
     IMPROVEMENT = "Улучшение"
 
     OTHER = "Прочее"
-
-
-class Priority(StrEnum):
-    """Приоритет для Work Item"""
-
-    LOW = "Низкий"
-    MEDIUM = "Средний"
-    HIGH = "Высокий"
-    CRITICAL = "Критический"  # Время реакции поддержки - мгновенное
-
-
-@dataclass(frozen=True, kw_only=True)
-class Tag(ValueObject):
-    """
-    Теги - метки (ключевые слова), которые можно присваивать тикетам для дополнительной,
-    неструктурированной классификации.
-    """
-
-    name: str
-    color: str = field(default="#3498db")
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class CommentType(StrEnum):
-    """Тип комментария"""
-
-    PUBLIC = "public"  # виден всем
-    INTERNAL = "internal"  # виден только сотрудникам поддержки
-    NOTE = "note"  # виден только автору
 
 
 @dataclass(frozen=True)
@@ -211,15 +197,3 @@ class TicketNumber(ValueObject):
         """Является ли тикет внутренним"""
 
         return self.prefix == self.INTERNAL_PREFIX
-
-
-class ReactionType(StrEnum):
-    """
-    Тип реакции, которая оставлена к комментарию
-    """
-
-    LIKE = "like"  # 👍
-    THANKS = "thanks"  # 🙏
-    IN_PROGRESS = "in_progress"  # 👀
-    RESOLVED = "resolved"  # 🚀
-    IMPORTANT = "important"  # ❗
