@@ -14,7 +14,7 @@ from src.projects.domain.vo import MemberRole
 from src.shared.domain.exceptions import NotFoundError
 from src.tickets.domain.entities import Ticket
 from src.tickets.domain.vo import Priority, TicketNumber, TicketStatus, TicketType
-from src.tickets.schemas import TicketCreate, TicketEdit, TicketResponse
+from src.tickets.schemas import TicketCreate, TicketUpdate, TicketResponse
 from src.tickets.services import TicketService
 
 
@@ -218,7 +218,7 @@ class TestCreate:
         # Добавление агента поддержки в проект
         membership = created_project.create_member(
             user_id=current_support_agent.user_id,
-            project_role=MemberRole.CONTRIBUTOR,
+            project_role=MemberRole.MEMBER,
             created_by=uuid4(),
         )
         await fake_membership_repo.create(membership)
@@ -336,7 +336,7 @@ class TestEdit:
         Успешное редактирование тикета
         """
 
-        data = TicketEdit(title="New title")
+        data = TicketUpdate(title="New title")
         response = await ticket_service.edit(
             ticket_id=created_ticket.id,
             data=data,
@@ -360,7 +360,7 @@ class TestEdit:
         """
 
         ticket_id = uuid4()
-        data = TicketEdit(title="New title")
+        data = TicketUpdate(title="New title")
 
         with pytest.raises(NotFoundError, match=f"Ticket with ID {ticket_id} not found"):
             await ticket_service.edit(
@@ -465,7 +465,7 @@ class TestAssignTo:
         # Создание членства в проекте
         membership = created_project.create_member(
             user_id=current_support_agent.user_id,
-            project_role=MemberRole.CONTRIBUTOR,
+            project_role=MemberRole.MEMBER,
             created_by=uuid4(),
         )
         await fake_membership_repo.create(membership)
@@ -514,7 +514,7 @@ class TestAssignTo:
         # Создание членства в проекте
         contributor = created_project.create_member(
             user_id=current_support_agent.user_id,
-            project_role=MemberRole.CONTRIBUTOR,
+            project_role=MemberRole.MEMBER,
             created_by=uuid4(),
         )
         await fake_membership_repo.create(contributor)
@@ -610,7 +610,7 @@ class TestChangeStatus:
         # Создание членства в проекте
         contributor = created_project.create_member(
             user_id=current_support_agent.user_id,
-            project_role=MemberRole.CONTRIBUTOR,
+            project_role=MemberRole.MEMBER,
             created_by=uuid4(),
         )
         await fake_membership_repo.create(contributor)
