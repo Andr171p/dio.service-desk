@@ -1,7 +1,10 @@
+from typing import Annotated
+
+from enum import StrEnum
 from io import BytesIO
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 from fastapi.responses import StreamingResponse
 
 from src.iam.dependencies import CurrentSubjectDep
@@ -24,7 +27,13 @@ from ..schemas import (
 router = APIRouter(prefix="/projects", tags=["Этапы проекта"])
 
 
-def _export_response(
+class ProjectStageExportFormat(StrEnum):
+    EXCEL = "excel"
+    PDF = "pdf"
+    WORD = "word"
+
+
+def create_export_response(
     content: bytes,
     filename: str,
     media_type: str,
@@ -54,12 +63,13 @@ async def create_project_stage(
 
 
 @router.get(
-    path="/{project_id}/stages/export/excel",
+    path="/{project_id}/stages/export",
     status_code=status.HTTP_200_OK,
-    summary="Экспортировать этапы проекта в Excel",
+    summary="Экспортировать этапы проекта",
 )
-async def export_project_stages_excel(
+async def export_project_stages(
     project_id: UUID,
+    export_format: Annotated[ProjectStageExportFormat, Query(alias="format")],
     current_subject: CurrentSubjectDep,
     service: ProjectStageExportServiceDep,
 ) -> StreamingResponse:
@@ -68,54 +78,29 @@ async def export_project_stages_excel(
         current_subject=current_subject,
     )
 
-    return _export_response(
-        content=export_project_stages_to_excel(report),
-        filename=f"project-stages-{report.project_key}.xlsx",
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    export_settings = {
+        ProjectStageExportFormat.EXCEL: (
+            export_project_stages_to_excel,
+            "xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ),
+        ProjectStageExportFormat.PDF: (
+            export_project_stages_to_pdf,
+            "pdf",
+            "application/pdf",
+        ),
+        ProjectStageExportFormat.WORD: (
+            export_project_stages_to_word,
+            "docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ),
+    }
+    exporter, extension, media_type = export_settings[export_format]
 
-
-@router.get(
-    path="/{project_id}/stages/export/pdf",
-    status_code=status.HTTP_200_OK,
-    summary="Экспортировать этапы проекта в PDF",
-)
-async def export_project_stages_pdf(
-    project_id: UUID,
-    current_subject: CurrentSubjectDep,
-    service: ProjectStageExportServiceDep,
-) -> StreamingResponse:
-    report = await service.build_report(
-        project_id=project_id,
-        current_subject=current_subject,
-    )
-
-    return _export_response(
-        content=export_project_stages_to_pdf(report),
-        filename=f"project-stages-{report.project_key}.pdf",
-        media_type="application/pdf",
-    )
-
-
-@router.get(
-    path="/{project_id}/stages/export/word",
-    status_code=status.HTTP_200_OK,
-    summary="Экспортировать этапы проекта в Word",
-)
-async def export_project_stages_word(
-    project_id: UUID,
-    current_subject: CurrentSubjectDep,
-    service: ProjectStageExportServiceDep,
-) -> StreamingResponse:
-    report = await service.build_report(
-        project_id=project_id,
-        current_subject=current_subject,
-    )
-
-    return _export_response(
-        content=export_project_stages_to_word(report),
-        filename=f"project-stages-{report.project_key}.docx",
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    return create_export_response(
+        content=exporter(report),
+        filename=f"project-stages-{report.project_key}.{extension}",
+        media_type=media_type,
     )
 
 
