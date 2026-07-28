@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <style>
+        @font-face {
+            font-family: OpenSansReport;
+            src: url("fonts/OpenSans-Regular.ttf");
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: OpenSansReport;
+            src: url("fonts/OpenSans-Bold.ttf");
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: OpenSansReport;
+            src: url("fonts/OpenSans-Italic.ttf");
+            font-weight: normal;
+            font-style: italic;
+        }
+
+        @font-face {
+            font-family: OpenSansReport;
+            src: url("fonts/OpenSans-BoldItalic.ttf");
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            color: #1f2937;
+            font-family: OpenSansReport, sans-serif;
+            font-size: 7pt;
+            line-height: 1.25;
+        }
+
+        h1 {
+            color: #17365d;
+            font-size: 16pt;
+            margin: 0 0 8pt;
+            text-align: center;
+        }
+
+        .metadata {
+            margin-bottom: 10pt;
+        }
+
+        .metadata p {
+            margin: 0 0 3pt;
+        }
+
+        .metadata strong {
+            color: #17365d;
+        }
+
+        a {
+            color: #0563c1;
+            text-decoration: underline;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th {
+            background-color: #4f81bd;
+            border: 0.4pt solid #9ca3af;
+            color: #ffffff;
+            font-size: 6.5pt;
+            font-weight: bold;
+            padding: 4pt 2pt;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        td {
+            border: 0.35pt solid #c7cdd4;
+            padding: 4pt 3pt;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f4f7fb;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .empty {
+            color: #6b7280;
+            padding: 12pt;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Отчёт по этапам проекта: {{ project_name }}</h1>
+
+    <div class="metadata">
+        <p>
+            <strong>Ссылка на проект:</strong>
+            <a href="{{ project_url }}">{{ project_url }}</a>
+        </p>
+        <p><strong>Статус проекта:</strong> {{ project_status }}</p>
+        <p><strong>Дата формирования:</strong> {{ generated_at }}</p>
+    </div>
+
+    <table repeat="1">
+        <thead>
+            <tr>
+                <th width="3%">№</th>
+                <th width="11%">Этап</th>
+                <th width="7%">Статус</th>
+                <th width="8%">Плановое начало</th>
+                <th width="8%">Плановое завершение</th>
+                <th width="8%">Фактическое начало</th>
+                <th width="8%">Фактическое завершение</th>
+                <th width="10%">Ответственный</th>
+                <th width="6%">Просрочен</th>
+                <th width="7%">Длительность (дни)</th>
+                <th width="12%">Описание</th>
+                <th width="12%">Критерии завершения</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td class="center">{{ row.number }}</td>
+                <td>{{ row.name | nl2br }}</td>
+                <td class="center">{{ row.status }}</td>
+                <td class="center">{{ row.planned_start }}</td>
+                <td class="center">{{ row.planned_end }}</td>
+                <td class="center">{{ row.started_at }}</td>
+                <td class="center">{{ row.completed_at }}</td>
+                <td>{{ row.responsible | nl2br }}</td>
+                <td class="center">{{ row.is_overdue }}</td>
+                <td class="center">{{ row.planned_duration_days }}</td>
+                <td>{{ row.description | nl2br }}</td>
+                <td>{{ row.completion_criteria | nl2br }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td class="empty" colspan="12">В проекте пока нет этапов</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
