@@ -28,17 +28,17 @@ class TaskBoardService:
 
         # 2. Определение контекста задач
         kwargs = {}
-        if context.type == "project":
+        if context.type_ == "project":
 
             kwargs = {"project_id": context.project_id}
 
-        elif context.type == "ticket":
+        elif context.type_ == "ticket":
             kwargs = {"ticket_id": context.ticket_id}
 
-        elif context.type == "assignee":
+        elif context.type_ == "assignee":
             kwargs = {"assignee_id": context.assignee_id}
 
-        elif context.type == "my":
+        elif context.type_ == "my":
             kwargs = {"assignee_id": current_user.user_id}
 
         kwargs.update({"priorities": filters.priorities, "overdue_only": filters.overdue_only})

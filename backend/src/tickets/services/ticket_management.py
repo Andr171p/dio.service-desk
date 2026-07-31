@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from functools import partial
 from uuid import UUID
 
-from src.activity_logs.recorder import ActivityLogRecorder
+from src.activity.recorder import ActivityRecorder
 from src.crm.domain.entities import Counterparty
 from src.crm.domain.repo import CounterpartyRepository
 from src.iam.domain.authz import PermissionResult, Subject
@@ -22,7 +22,7 @@ from ..domain.entities import Ticket
 from ..domain.repos import TicketRepository
 from ..domain.services import create_ticket
 from ..mappers import map_ticket_to_response
-from ..schemas import TicketCreate, TicketUpdate, TicketResponse
+from ..schemas import TicketCreate, TicketResponse, TicketUpdate
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +48,7 @@ class TicketService:
             user_repo: UserRepository,
             counterparty_repo: CounterpartyRepository,
             authz_service: TicketAuthZService,
-            activity_log_recorder: ActivityLogRecorder,
+            activity_log_recorder: ActivityRecorder,
             event_publisher: EventPublisher,
     ) -> None:
         self.uow = uow
@@ -211,6 +211,28 @@ class TicketService:
             action=lambda t: t.assign(assignee_id=assignee.id, actor_id=current_subject.id),
         )
 
+    async def submit_for_approval(
+            self, ticket_id: UUID, current_subject: Subject,
+    ) -> TicketResponse:
+        """Отправить заявку на согласование."""
+
+        return await self._execute(
+            ticket_id=ticket_id,
+            current_subject=current_subject,
+            authz=self.authz_service.can_submit_for_approval,
+            action=lambda t: t.submit_for_approval(current_subject.id)
+        )
+
+    async def approve(self, ticket_id: UUID, current_subject: Subject) -> TicketResponse:
+        """Согласовать заявку (после согласования можно брать в работу)."""
+
+        return await self._execute(
+            ticket_id=ticket_id,
+            current_subject=current_subject,
+            authz=self.authz_service.can_approve_ticket,
+            action=lambda t: t.approve(current_subject.id),
+        )
+
     async def start_progress(self, ticket_id: UUID, current_subject: Subject) -> TicketResponse:
         """Взять тикет в работу."""
 
@@ -219,6 +241,16 @@ class TicketService:
             current_subject=current_subject,
             authz=self.authz_service.can_manage_ticket,
             action=lambda t: t.start_progress(current_subject.id),
+        )
+
+    async def pause(self, ticket_id: UUID, current_subject: Subject) -> TicketResponse:
+        """Поставить работу с заявкой на паузу."""
+
+        return await self._execute(
+            ticket_id=ticket_id,
+            current_subject=current_subject,
+            authz=self.authz_service.can_manage_ticket,
+            action=lambda t: t.pause(current_subject.id),
         )
 
     async def resolve(self, ticket_id: UUID, current_subject: Subject) -> TicketResponse:

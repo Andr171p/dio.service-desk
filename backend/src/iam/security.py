@@ -82,7 +82,7 @@ def create_access_token(
         "sub": f"{user_id}",
         "exp": expires_at.timestamp(),
         "iat": now.timestamp(),
-        "type": "access",
+        "type_": "access",
         "jti": f"{uuid4()}",
         "email": f"{email}",
         "roles": list(user_roles),
@@ -101,7 +101,7 @@ def create_refresh_token(user_id: UUID) -> str:
         "sub": f"{user_id}",
         "exp": expires_at.timestamp(),
         "iat": now.timestamp(),
-        "type": "refresh",
+        "type_": "refresh",
         "jti": f"{uuid4()}",
     }
     return jwt.encode(payload=payload, key=settings.secret_key, algorithm=settings.jwt.algorithm)

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import Depends, Query
 
-from src.activity_logs.dependencies import ActivityLogRecorderDep
+from src.activity.dependencies import ActivityLogRecorderDep
 from src.core.database import session_factory
 from src.crm.dependencies import CounterpartyRepoDep
 from src.crm.domain.entities import Counterparty

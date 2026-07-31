@@ -96,7 +96,7 @@ async def notification_stream(
             )
             for notification in unread_notifications.items:
                 payload = {
-                    "type": "notification",
+                    "type_": "notification",
                     "notification": map_notification_to_response(
                         notification
                     ).model_dump(mode="json"),
@@ -113,7 +113,7 @@ async def notification_stream(
                     # Ожидание сообщения из очереди
                     message = await asyncio.wait_for(queue.get(), timeout=25.0)
                     payload = {
-                        "type": "notification",
+                        "type_": "notification",
                         "notification": message.model_dump(mode="json")
                     }
                     yield ServerSentEvent(data=payload)

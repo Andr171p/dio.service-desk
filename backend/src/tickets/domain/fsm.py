@@ -11,7 +11,7 @@ from .entities import Ticket
 from .vo import TicketStatus
 
 P = ParamSpec("P")
-T = TypeVar("T", bound=Ticket)
+T = TypeVar("AggregateT", bound=Ticket)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +48,7 @@ def transition(*from_: TicketStatus, to: TicketStatus | None = None):
             if transition_.to:
                 self.change_status(transition_.to, actor_id)
 
-        wrapper.__transition__ = transition_  # type: ignore[attr-defined]
+        wrapper.__transition__ = transition_  # type_: ignore[attr-defined]
 
         return wrapper
 

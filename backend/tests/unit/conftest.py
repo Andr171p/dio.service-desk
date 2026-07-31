@@ -253,7 +253,7 @@ def ticket_factory(fake_ticket_repo):
             number=overrides.pop("number", TicketNumber("TEST-26-00000001")),
             title=overrides.pop("title", "Test title"),
             description=overrides.pop("description", "Test description"),
-            type=overrides.pop("type", TicketType.SERVICE_REQUEST),
+            type=overrides.pop("type_", TicketType.SERVICE_REQUEST),
             status=status,
             priority=overrides.pop("priority", Priority.MEDIUM),
             assignee_id=assignee_id,

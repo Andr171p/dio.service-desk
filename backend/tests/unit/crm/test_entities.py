@@ -170,7 +170,7 @@ def test_create_branch_invalid_counterparty_type(valid_inn_ip, valid_phone):
     )
 
     with pytest.raises(
-            InvariantViolationError, match="impossible to assign a branch to a non-legal entity"
+            InvariantViolationError, match="impossible to assign a branch to a non-legal workflow"
     ):
         counterparty.create_branch(
             name="Филиал",

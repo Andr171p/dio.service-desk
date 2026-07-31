@@ -4,8 +4,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query, status
 
-from src.activity_logs.dependencies import ActivityLogPaginatorFunc, get_activity_logs_paginator
-from src.activity_logs.schemas import ActivityLogResponse
+from src.activity.dependencies import ActivityLogPaginatorFunc, get_activity_logs_paginator
+from src.activity.schemas import ActivityLogResponse
 from src.iam.dependencies import (
     CurrentSubjectDep,
     CurrentUserDep,

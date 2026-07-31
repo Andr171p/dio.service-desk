@@ -91,7 +91,7 @@ def get_rate_limiter() -> RateLimiter:
 def create_rate_limiter(
         max_requests: int, window_seconds: int, identifier: IdentifierFunc = ip_identifier
 ):
-    """Создание зависимости для проверки лимита запросов"""
+    """Создание зависимости для проверки лимита запросов."""
 
     async def dependency(request: Request, limiter: RateLimiter = Depends(get_rate_limiter)):
         client_id = await identifier(request)

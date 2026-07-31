@@ -13,7 +13,7 @@ from .domain.dtos import ActivityLogFilters
 from .domain.repos import ActivityLogRepository
 from .infra.repos import SqlActivityLogRepository
 from .mappers import map_activity_log_to_response
-from .recorder import ActivityLogRecorder
+from .recorder import ActivityRecorder
 from .schemas import ActivityLogResponse
 
 ActivityLogPaginatorFunc = Callable[[str, UUID], Awaitable[Page[ActivityLogResponse]]]
@@ -26,8 +26,8 @@ def get_activity_log_repo(session: SessionDep) -> SqlActivityLogRepository:
 ActivityLogRepoDep = Annotated[ActivityLogRepository, Depends(get_activity_log_repo)]
 
 
-def get_activity_log_recorder(activity_log_repo: ActivityLogRepoDep) -> ActivityLogRecorder:
-    return ActivityLogRecorder(activity_log_repo)
+def get_activity_log_recorder(activity_log_repo: ActivityLogRepoDep) -> ActivityRecorder:
+    return ActivityRecorder(activity_log_repo)
 
 
 ActivityLogRecorderDep = Annotated[ActivityLogRepository, Depends(get_activity_log_recorder)]

@@ -97,7 +97,7 @@ class TestCreate:
         Программные продукты могут только записывать сотрудники поддержки
         """
 
-        with pytest.raises(PermissionDeniedError, match="Only support staff can create products"):
+        with pytest.raises(PermissionDeniedError, match="Only support staff can create_handler products"):
             await product_service.create(
                 data=valid_create_data, created_by=uuid4(), created_by_role=created_by_role,
             )

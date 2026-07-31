@@ -11,7 +11,7 @@ def can_create_contract(user_role: UserRole) -> PermissionResult:
     """Может ли пользователь создавать новый договор"""
 
     if user_role not in {UserRole.ACCOUNT_MANAGER, UserRole.ADMIN}:
-        return PermissionResult(False, "Only account manager or above can create contracts")
+        return PermissionResult(False, "Only account manager or above can create_handler contracts")
 
     return PermissionResult(True)
 

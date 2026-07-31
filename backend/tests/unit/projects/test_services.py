@@ -132,10 +132,10 @@ class TestCreateProject:
         # Создание проекта с занятым ключом
         data = ProjectCreate(name="Another Project", key="TEST")
 
-        # Первый вызов Project.create должен пройти, но при flush возникнет ошибка уникальности
+        # Первый вызов Project.create_handler должен пройти, но при flush возникнет ошибка уникальности
         with patch.object(
             project_service.project_repo,
-            "create",
+            "create_handler",
             side_effect=[
                 IntegrityError("duplicate key", None, None),
                 None,
@@ -155,7 +155,7 @@ class TestCreateProject:
 
         with patch.object(
             project_service.project_repo,
-            "create",
+            "create_handler",
             side_effect=IntegrityError("duplicate", None, None),
         ):
             with pytest.raises(AlreadyExistsError) as exc:

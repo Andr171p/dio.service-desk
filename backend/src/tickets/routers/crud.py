@@ -3,7 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 
 from src.iam.dependencies import CurrentSubjectDep, get_current_subject
-from src.tickets.dependencies import TicketServiceDep, get_ticket_or_404
+from src.shared.schemas import Page
+from src.tickets.dependencies import TicketServiceDep, get_ticket_or_404, paginate_tickets
 from src.tickets.schemas import TicketCreate, TicketResponse, TicketUpdate
 
 router = APIRouter(prefix="/tickets", tags=["Заявки | CRUD"])
@@ -19,6 +20,19 @@ async def create_ticket(
         data: TicketCreate, current_subject: CurrentSubjectDep, service: TicketServiceDep,
 ) -> TicketResponse:
     return await service.create(data=data, current_subject=current_subject)
+
+
+@router.post(
+    path="",
+    status_code=status.HTTP_200_OK,
+    response_model=Page[TicketResponse],
+    dependencies=[Depends(get_current_subject)],
+    summary="Получить список заявок",
+)
+async def get_tickets(
+        tickets: Page[TicketResponse] = Depends(paginate_tickets),
+) -> Page[TicketResponse]:
+    return tickets
 
 
 @router.patch(

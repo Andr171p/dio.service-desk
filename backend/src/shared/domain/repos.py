@@ -3,7 +3,7 @@ from typing import Protocol, Self, runtime_checkable
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
-from src.activity_logs.recorder import ActivityLogRecorder
+from src.activity.recorder import ActivityRecorder
 
 from ..schemas import Page, Pagination
 from .entities import Entity
@@ -31,7 +31,9 @@ class Repository[EntityT: Entity](Protocol):
 
     async def read(self, uid: UUID) -> EntityT | None: ...
 
-    async def paginate(self, params: Pagination) -> Page[EntityT]: ...
+    async def paginate[T](
+            self, pagination: Pagination, filters: T | None = None
+    ) -> Page[EntityT]: ...
 
     async def update(self, entity: EntityT) -> None: ...
 
@@ -58,7 +60,7 @@ async def finalize[EntityT: Entity](
         uow: UnitOfWork,
         *aggregates: EntityT,
         event_publisher: EventPublisher,
-        activity_recorder: ActivityLogRecorder | None = None,
+        activity_recorder: ActivityRecorder | None = None,
 ) -> None:
     events = []
     for aggregate in aggregates:
@@ -82,8 +84,8 @@ class RepositoryDecorator[EntityT: Entity](Repository[EntityT]):
     async def read(self, uid: UUID) -> EntityT | None:
         return await self._repo.read(uid)
 
-    async def paginate(self, params: Pagination) -> Page[EntityT]:
-        return await self._repo.paginate(params)
+    async def paginate(self, pagination: Pagination) -> Page[EntityT]:
+        return await self._repo.paginate(pagination)
 
     async def update(self, entity: EntityT) -> None:
         await self._repo.update(entity)

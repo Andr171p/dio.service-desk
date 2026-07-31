@@ -3,7 +3,7 @@
 ## Создание первого админа
 
 ```bash
-python -m cli create-first-admin
+python -m cli create_handler-first-admin
 ```
 
 ## Инициализация S3 хранилища

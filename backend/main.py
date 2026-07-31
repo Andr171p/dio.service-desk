@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # Выполнение необходимых команд для запуска приложения
     await run_cli_command(sys.executable, "-m", "alembic", "upgrade", "head")
-    await run_cli_command(sys.executable, "-m", "cli", "create-first-admin")
+    await run_cli_command(sys.executable, "-m", "cli", "create_handler-first-admin")
     await run_cli_command(sys.executable, "-m", "cli", "init-s3-buckets")
 
     # Проверка доступности Redis

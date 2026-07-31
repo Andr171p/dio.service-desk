@@ -9,7 +9,7 @@ from .registry import map_event_to_activity_log
 logger = logging.getLogger(__name__)
 
 
-class ActivityLogRecorder:
+class ActivityRecorder:
     def __init__(self, activity_repo: ActivityLogRepository) -> None:
         self.activity_repo = activity_repo
 

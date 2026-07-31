@@ -1,7 +1,7 @@
 from decimal import Decimal
 from uuid import UUID
 
-from src.activity_logs.recorder import ActivityLogRecorder
+from src.activity.recorder import ActivityRecorder
 from src.iam.domain.authz import Subject
 from src.iam.domain.entities import User
 from src.iam.domain.exceptions import PermissionDeniedError
@@ -31,7 +31,7 @@ class TaskService:
             user_repo: UserRepository,
             project_repo: ProjectRepository,
             task_authz_service: TaskAuthZService,
-            activity_log_recorder: ActivityLogRecorder,
+            activity_log_recorder: ActivityRecorder,
             event_publisher: EventPublisher,
     ) -> None:
         self.uow = uow

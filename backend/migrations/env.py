@@ -10,7 +10,7 @@ from alembic import context
 from src.core.settings import settings
 from src.core.database import Base
 
-from src.activity_logs.infra.models import ActivityLogOrm
+from src.activity.infra.models import ActivityLogOrm
 from src.comments.infra.models import CommentOrm, ReactionOrm
 from src.crm.infra.models import CounterpartyOrm
 from src.iam.infra.models import InvitationOrm, UserOrm
@@ -74,7 +74,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
+    """In this scenario we need to create_handler an Engine
     and associate a connection with the context.
 
     """

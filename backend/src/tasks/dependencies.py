@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, Query
 
-from src.activity_logs.dependencies import ActivityLogRecorderDep
+from src.activity.dependencies import ActivityLogRecorderDep
 from src.iam.dependencies import UserRepoDep
 from src.projects.dependencies import ProjectRepoDep
 from src.shared.dependencies import EventPublisherDep, SessionDep

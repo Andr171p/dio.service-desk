@@ -10,16 +10,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="CLI утилиты для diocon-tickets")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Команда `create-first-admin`
+    # Команда `create_handler-first-admin`
     subparsers.add_parser(
-        "create-first-admin", help="Создать первого администратора"
+        "create_handler-first-admin", help="Создать первого администратора"
     )
     # Команда `init-s3-storage`
     subparsers.add_parser("init-s3-buckets", help="Инициализация S3 хранилища")
 
     args = parser.parse_args()
 
-    if args.command == "create-first-admin":
+    if args.command == "create_handler-first-admin":
         asyncio.run(create_first_admin())
     elif args.command == "init-s3-buckets":
         asyncio.run(init_s3_buckets())

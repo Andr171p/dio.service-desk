@@ -160,6 +160,46 @@ class TicketAuthZService:
 
         return any_allowed(*rules)
 
+    async def can_submit_for_approval(self, subject: Subject, ticket: Ticket) -> PermissionResult:
+        rules = [_is_ticket_reporter(subject, ticket)]
+
+        if ticket.project_id:
+            member = await self.member_repo.find(ticket.project_id, subject.id)
+            rules.append(
+                require(
+                    member is not None,
+                    f"You are not member of this project - {ticket.project_id}"
+                ),
+            )
+
+        return all_allowed(*rules)
+
+    async def can_approve_ticket(self, subject: Subject, ticket: Ticket) -> PermissionResult:
+        rules = [require(subject.has_role(UserRole.SUPPORT_MANAGER), "SUPPORT_MANAGER required")]
+
+        customer_admin_rule = all_allowed(
+            require(subject.has_role(UserRole.CUSTOMER_ADMIN), "CUSTOMER_ADMIN required"),
+            _is_belong_to_counterparty(subject, ticket.counterparty_id),
+        )
+        rules.append(customer_admin_rule)
+
+        if ticket.project_id:
+            member = await self.member_repo.find(ticket.project_id, subject.id)
+            rules.append(
+                all_allowed(
+                    require(
+                        member is not None,
+                        f"You are not member of this project - {ticket.project_id}",
+                    ),
+                    require(
+                        member.has_any_role(MemberRole.CUSTOMER_ADMIN, MemberRole.MANAGER),
+                        "Require a leat one member roles: CUSTOMER_ADMIN, MANAGER",
+                    ),
+                )
+            )
+
+        return any_allowed(*rules)
+
     async def can_archive_ticket(self, subject: Subject, ticket: Ticket) -> PermissionResult:
         rules = [
             is_admin_user(subject),

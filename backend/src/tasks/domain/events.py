@@ -3,8 +3,8 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from src.activity_logs.domain.models import ActivityLog
-from src.activity_logs.registry import register_activity_log_mapper
+from src.activity.domain.models import ActivityLog
+from src.activity.registry import register_activity_log_mapper
 from src.shared.domain.events import Event
 
 from .vo import TaskNumber, TaskStatus

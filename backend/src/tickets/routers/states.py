@@ -12,6 +12,30 @@ router = APIRouter(prefix="/tickets", tags=["Заявки | Управление
 
 
 @router.post(
+    path="/{ticket_id}/submit",
+    status_code=status.HTTP_200_OK,
+    response_model=TicketResponse,
+    summary="Отправить на согласование",
+)
+async def submit_ticket_for_approval(
+        ticket_id: UUID, current_subject: CurrentSubjectDep, service: TicketServiceDep,
+) -> TicketResponse:
+    return await service.submit_for_approval(ticket_id=ticket_id, current_subject=current_subject)
+
+
+@router.post(
+    path="/{ticket_id}/approve",
+    status_code=status.HTTP_200_OK,
+    response_model=TicketResponse,
+    summary="Согласовать заявку",
+)
+async def approve_ticket(
+        ticket_id: UUID, current_subject: CurrentSubjectDep, service: TicketServiceDep,
+) -> TicketResponse:
+    return await service.approve(ticket_id=ticket_id, current_subject=current_subject)
+
+
+@router.post(
     path="/{ticket_id}/assign",
     status_code=status.HTTP_200_OK,
     response_model=TicketResponse,
@@ -19,7 +43,7 @@ router = APIRouter(prefix="/tickets", tags=["Заявки | Управление
 )
 async def assign_to_ticket(
         ticket_id: UUID,
-        assignee_id: Annotated[UUID, Body(description="Идентификатор пользователя")],
+        assignee_id: Annotated[UUID, Body(embed=True, description="Идентификатор пользователя")],
         current_subject: CurrentSubjectDep,
         service: TicketServiceDep,
 ) -> TicketResponse:
@@ -35,6 +59,18 @@ async def assign_to_ticket(
     summary="Начать работу над заявкой",
 )
 async def start_ticket_progress(
+        ticket_id: UUID, current_subject: CurrentSubjectDep, service: TicketServiceDep,
+) -> TicketResponse:
+    return await service.start_progress(ticket_id=ticket_id, current_subject=current_subject)
+
+
+@router.post(
+    path="/{ticket_id}/pause",
+    status_code=status.HTTP_200_OK,
+    response_model=TicketResponse,
+    summary="Поставить на паузу",
+)
+async def pause_ticket(
         ticket_id: UUID, current_subject: CurrentSubjectDep, service: TicketServiceDep,
 ) -> TicketResponse:
     return await service.start_progress(ticket_id=ticket_id, current_subject=current_subject)

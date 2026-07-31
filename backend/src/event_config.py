@@ -9,7 +9,7 @@ EventT = TypeVar("EventT", bound=Event)
 
 # Маппинг доменных событий к топикам в которых они будут обработаны (очереди)
 EVENT_TOPIC_MAP: dict[type[EventT], str] = {
-    TicketCreated: "tickets.create",
+    TicketCreated: "tickets.create_handler",
     WorklogApproved: "worklogs.approve",
     UserInvited: "users.invite",
 }

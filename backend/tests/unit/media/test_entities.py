@@ -133,7 +133,7 @@ def test_raises_on_negative_size(valid_data):
 def test_raises_on_unsupported_owner_type(valid_data):
     data = valid_data.copy()
     data["owner_type"] = "unknown_entity"
-    with pytest.raises(InvariantViolationError, match="Unsupported owner type"):
+    with pytest.raises(InvariantViolationError, match="Unsupported owner type_"):
         Attachment(**data)
 
 

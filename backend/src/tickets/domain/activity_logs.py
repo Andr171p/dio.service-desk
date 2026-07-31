@@ -2,8 +2,8 @@
 Преобразование доменных событий в человекочитаемые бизнес действия.
 """
 
-from src.activity_logs.domain.models import ActivityLog
-from src.activity_logs.registry import register_activity_log_mapper
+from src.activity.domain.models import ActivityLog
+from src.activity.registry import register_activity_log_mapper
 
 from .entities import Ticket
 from .events import (

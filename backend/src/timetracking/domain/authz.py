@@ -50,7 +50,7 @@ def can_create_timesheet(user_role: UserRole) -> PermissionResult:
     """Может ли пользователь сформировать ЛУРВ"""
 
     if not user_role.is_staff():
-        return PermissionResult(False, "Only internal staff can create timesheet")
+        return PermissionResult(False, "Only internal staff can create_handler timesheet")
 
     return PermissionResult(True)
 

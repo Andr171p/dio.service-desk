@@ -51,7 +51,7 @@ class Counterparty(Entity):
             case CounterpartyType.LEGAL_ENTITY | CounterpartyType.BRANCH:
                 if inn_length != LEGAL_INN_LENGTH:
                     raise InvariantViolationError(
-                        "For a legal entity, the IIN must contain 10 digits "
+                        "For a legal workflow, the IIN must contain 10 digits "
                         f"(received {inn_length})"
                     )
 
@@ -154,7 +154,7 @@ class Counterparty(Entity):
 
         if self.counterparty_type != CounterpartyType.LEGAL_ENTITY:
             raise InvariantViolationError(
-                "It is impossible to assign a branch to a non-legal entity"
+                "It is impossible to assign a branch to a non-legal workflow"
             )
 
         return Counterparty(
