@@ -3,11 +3,11 @@ from faststream.rabbit.fastapi import RabbitRouter
 
 from .settings import settings
 
-broker_router = RabbitRouter(settings.rabbit.url, virtualhost=settings.rabbit.virtualhost)
+rabbit_router = RabbitRouter(settings.rabbit.url, virtualhost=settings.rabbit.virtualhost)
 
 
-def get_broker() -> RabbitBroker:
-    return broker_router.broker
+def get_rabbit_broker() -> RabbitBroker:
+    return rabbit_router.broker
 
 
-broker = get_broker()
+rabbit_broker = get_rabbit_broker()

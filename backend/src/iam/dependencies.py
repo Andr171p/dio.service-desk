@@ -11,7 +11,7 @@ from src.core.settings import settings
 from src.shared.dependencies import EventPublisherDep, PaginationDep, SessionDep
 from src.shared.domain.exceptions import NotFoundError
 from src.shared.domain.repos import get_or_raise_404
-from src.shared.infra.mail import SmtpMailSender
+from src.shared.infra.mail import SmtpMailClient
 from src.shared.schemas import Page
 
 from .domain.authz import Subject
@@ -63,8 +63,8 @@ def get_auth_service(
     )
 
 
-def get_mail_sender() -> SmtpMailSender:
-    return SmtpMailSender(
+def get_mail_sender() -> SmtpMailClient:
+    return SmtpMailClient(
         smtp_host=settings.mail.smtp_host,
         smtp_port=settings.mail.smtp_port,
         use_tls=settings.mail.smtp_use_tls,
@@ -74,7 +74,7 @@ def get_mail_sender() -> SmtpMailSender:
 def get_invitation_service(
         session: SessionDep,
         invitation_repo: InvitationRepoDep,
-        mail_sender: Annotated[SmtpMailSender, Depends(get_mail_sender)],
+        mail_sender: Annotated[SmtpMailClient, Depends(get_mail_sender)],
         event_publisher: EventPublisherDep,
 ) -> InvitationService:
     return InvitationService(

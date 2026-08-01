@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.comments.router import router as comments_router
-from src.core.broker import broker_router
+from src.core.broker import rabbit_router
 from src.core.logging import configure_logging
 from src.core.redis import redis_client
 from src.core.settings import settings
@@ -29,6 +29,7 @@ from src.shared.utils.cli import run_cli_command
 from src.tasks.infra.handlers import router as task_broker_router
 from src.tasks.router import router as task_router
 from src.tickets.router import router as tickets_router
+from src.workflows.api.v1 import router as workflows_router
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await redis_client.ping()
 
     # Запуск брокера сообщений
-    async with broker_router.lifespan_context(app):
+    async with rabbit_router.lifespan_context(app):
         yield
 
 
@@ -66,9 +67,9 @@ Instrumentator(
 ).instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 # Rabbit обработчики
-broker_router.include_router(notification_router)
-broker_router.include_router(notifications_broker_router)
-broker_router.include_router(task_broker_router)
+rabbit_router.include_router(notification_router)
+rabbit_router.include_router(notifications_broker_router)
+rabbit_router.include_router(task_broker_router)
 
 # HTTP роутеры
 router = APIRouter(prefix="/api/v1")
@@ -83,9 +84,10 @@ router.include_router(product_router)
 router.include_router(project_router)
 router.include_router(task_router)
 router.include_router(feedback_router)
+router.include_router(workflows_router)
 
 app.include_router(router)
-app.include_router(broker_router)
+app.include_router(rabbit_router)
 
 app.add_middleware(
     CORSMiddleware,

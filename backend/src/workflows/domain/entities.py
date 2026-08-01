@@ -1,13 +1,16 @@
 from typing import Annotated, Any, Self
 
+import json
 from collections.abc import Mapping
-from dataclasses import dataclass, field
-from uuid import UUID
+from dataclasses import dataclass, field, fields
+from functools import cached_property
+from uuid import NAMESPACE_OID, UUID, uuid5
 
 from typing_extensions import Doc
 
 from src.shared.domain.entities import AggregateRoot, Entity
-from src.shared.domain.exceptions import AlreadyExistsError, NotFoundError
+from src.shared.domain.exceptions import AlreadyExistsError, InvariantViolationError, NotFoundError
+from src.shared.utils.time import current_datetime
 
 from .exceptions import InvalidWorkflowError
 from .types import StatusId, TransitionId
@@ -22,6 +25,33 @@ class Rule:
     kind: RuleKind
     config: Mapping[str, Any]
     order: int = field(default=0)
+
+    @cached_property
+    def id(self) -> UUID:
+        """Детерминированный идентификатор правила.
+        Вычисляется на основе: type + kind + config -> одинаковый UUID.
+        """
+
+        payload = {
+            "type_": self.type_,
+            "kind": self.kind,
+            "config": self.config,
+        }
+        name = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+        return uuid5(NAMESPACE_OID, name)
+
+    def replace(
+            self, *, config: Mapping[str, Any] | None = None, order: int | None = None,
+    ) -> "Rule":
+        if order is not None and order <= 0:
+            raise ValueError("Rule execution order must be > 0")
+
+        return Rule(
+            type_=self.type_,
+            kind=self.kind,
+            config=self.config if config is None else config,
+            order=self.order if order is None else order,
+        )
 
 
 @dataclass(kw_only=True)
@@ -42,6 +72,68 @@ class Status(Entity):
 
     order: int
 
+    @classmethod
+    def create(
+            cls,
+            name: str,
+            description: str | None,
+            color: str,
+            category: StatusCategory,
+            kind: StatusKind,
+            order: int,
+    ) -> "Status":
+        if not name.strip():
+            raise ValueError("Status name cannot be empty")
+
+        if order < 0:
+            raise ValueError("Status order must be >= 0")
+
+        return cls(
+            name=name,
+            description=description,
+            color=color,
+            category=category,
+            kind=kind,
+            order=order,
+        )
+
+    def edit(
+            self,
+            *,
+            name: str | None = None,
+            description: str | None = None,
+            color: str | None = None,
+            category: StatusCategory | None = None,
+            kind: StatusKind | None = None,
+    ) -> None:
+        changed = False
+
+        values = {
+            "name": name,
+            "description": description,
+            "color": color,
+            "category": category,
+            "kind": kind,
+        }
+
+        for field_ in fields(self):
+            value = values.get(field_.name)
+
+            if value is None:
+                continue
+
+            if isinstance(value, str):
+                value = value.strip()
+                if not value:
+                    raise ValueError(f"Status {field_.name} cannot be empty.")
+
+            if getattr(self, field_.name) != value:
+                setattr(self, field_.name, value)
+                changed = True
+
+        if changed:
+            self.updated_at = current_datetime()
+
 
 @dataclass(kw_only=True)
 class Transition(Entity):
@@ -58,7 +150,7 @@ class Transition(Entity):
     sources: set[StatusId]
     destination: StatusId
 
-    rules: tuple[Rule, ...] = ()
+    rules: list[Rule] = field(default_factory=list)
 
     @property
     def guards(self) -> tuple[Rule, ...]:
@@ -67,6 +159,83 @@ class Transition(Entity):
     @property
     def actions(self) -> tuple[Rule, ...]:
         return tuple(rule for rule in self.rules if rule.kind == RuleKind.ACTION)
+
+    def _sort_rules(self) -> None:
+        """Сортирует правила по их порядку выполнения."""
+
+        self.rules.sort(key=lambda r: r.order)
+
+    def rename(self, new_name: str) -> None:
+        cleaned = new_name.strip()
+
+        if not cleaned:
+            raise ValueError("New transition name cannot be empty")
+
+        if self.name == cleaned:
+            return
+
+        self.name = cleaned
+        self.updated_at = current_datetime()
+
+    def change(self, new_sources: set[StatusId], new_destination: StatusId | None = None) -> None:
+        """Изменяет переход между статусами, меняет путь из вершин графа Workflow."""
+
+        if not new_sources:
+            raise ValueError("Transition must have at least one source status.")
+
+        if new_destination in new_sources:
+            raise InvalidWorkflowError(
+                "Transition cannot have destination equal to one of its sources."
+            )
+
+        if new_sources == self.sources and new_destination == self.destination:
+            return
+
+        self.sources = new_sources
+
+        if new_destination:
+            self.destination = new_destination
+
+        self.updated_at = current_datetime()
+
+    def _find_rule(self, rule_id: UUID) -> Rule | None:
+        return next((rule for rule in self.rules if rule.id == rule_id), None)
+
+    def require_rule(self, rule_id: UUID) -> Rule:
+        """Требует обязательного наличия правила."""
+
+        rule = self._find_rule(rule_id)
+
+        if rule is None:
+            raise NotFoundError(f"Rule - '{rule_id}' does not exist in transition - '{self.id}'.")
+
+        return rule
+
+    def add_rule(self, rule: Rule) -> None:
+        if rule in self.rules:
+            raise AlreadyExistsError(
+                f"Rule '{rule.type_}' already exists in transition '{self.id}'."
+            )
+
+        self.rules.append(rule)
+        self._sort_rules()
+
+    def remove_rule(self, rule_id: UUID) -> None:
+
+        rule = self._find_rule(rule_id)
+
+        if rule is None:
+            raise NotFoundError(f"Rule '{rule_id}' does not exist in transition '{self.id}'.")
+
+        self.rules.remove(rule)
+
+    def replace_rule(self, rule: Rule) -> None:
+        index = self.rules.index(rule)
+        self.rules[index] = rule
+        self._sort_rules()
+
+    def has_rule(self, rule: Rule) -> bool:
+        return rule in self.rules
 
 
 @dataclass(kw_only=True)
@@ -138,6 +307,9 @@ class Workflow(AggregateRoot):
             is_default: bool = False,
     ) -> Self:
 
+        if not name.strip():
+            raise ValueError("Workflow name cannot be empty")
+
         if version < 0:
             raise ValueError("Workflow version must be > 0")
 
@@ -150,6 +322,35 @@ class Workflow(AggregateRoot):
             is_active=True,
             initial_status_id=None,
         )
+
+    def edit(self, name: str | None = None, description: str | None = None) -> None:
+
+        changed = False
+
+        kwargs = {"name": name, "description": description}
+        for field_name, value in kwargs.items():
+            if value is not None:
+                cleaned = value.strip()
+                if not cleaned:
+                    raise ValueError(f"Workflow {field_name} cannot be empty")
+
+                if getattr(self, field_name) != cleaned:
+                    setattr(self, field_name, cleaned)
+                    changed = True
+
+        if changed:
+            self.updated_at = current_datetime()
+
+    def archive(self) -> None:
+
+        if self.is_default:
+            raise InvariantViolationError("Cannot archive default workflow")
+
+        if self.is_deleted:
+            return
+
+        self.is_active = False
+        self.deleted_at = current_datetime()
 
     def add_status(self, status: Status) -> None:
 
@@ -181,6 +382,17 @@ class Workflow(AggregateRoot):
             raise NotFoundError(f"Status - {status_id} does not exist in workflow - {self.id}.")
 
         self.initial_status_id = status_id
+
+    def require_status(self, status_id: StatusId) -> Status:
+        """Требует наличие статуса, иначе выбрасывает NotFoundError."""
+
+        status = self.statuses.get(status_id)
+        if not status:
+            raise NotFoundError(
+                f"Status - {status_id} does not exists in workflow - {self.id}."
+            )
+
+        return status
 
     def add_transition(self, transition: Transition) -> None:
         if transition.id in self.transitions:
@@ -226,3 +438,14 @@ class Workflow(AggregateRoot):
         """Можно ли выполнить переход из одного статуса в другой."""
 
         return self.find_transition(source, destination) is not None
+
+    def require_transition(self, transition_id: TransitionId) -> Transition:
+        """Требует наличие перехода, иначе выбрасывает NotFoundError."""
+
+        transition = self.transitions.get(transition_id)
+        if not transition:
+            raise NotFoundError(
+                f"Transition - {transition_id} does not exists in workflow - {self.id}."
+            )
+
+        return transition

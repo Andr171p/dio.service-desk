@@ -8,8 +8,8 @@ import aiosmtplib
 import html2text
 import jinja2
 
-from ...core.settings import TEMPLATES_DIR, settings
-from ..domain.exceptions import EmailSendingFailedError
+from src.core.settings import TEMPLATES_DIR, settings
+from src.shared.domain.exceptions import EmailSendingFailedError
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class MailSender(Protocol):
     ) -> None: ...
 
 
-class SmtpMailSender:
+class SmtpMailClient:
     def __init__(self, smtp_host: str, smtp_port: int, use_tls: bool = True) -> None:
         self.smtp_config = {"hostname": smtp_host, "port": smtp_port, "use_tls": use_tls}
 
@@ -48,7 +48,7 @@ class SmtpMailSender:
         from_email: str | None = None,
         reply_to: str | None = None,
     ) -> None:
-        """Отправка письма на почту используя SMTP протокол"""
+        """Отправка письма на почту используя SMTP протокол."""
 
         from_email = from_email or settings.mail.default_from_email
         recipients = [to] if isinstance(to, list) else to

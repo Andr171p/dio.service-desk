@@ -12,7 +12,7 @@ from redis.exceptions import RedisError
 from starlette.applications import ASGIApp
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..domain.exceptions import RateLimitExceededError
+from src.shared.domain.exceptions import RateLimitExceededError
 
 logger = logging.getLogger(__name__)
 
@@ -45,13 +45,12 @@ end
 """
 
 # Функции для идентификации запросов клиентов
-
-IdentifierFunc = Callable[[Request], Awaitable[str]]
+type IdentifierFunc = Callable[[Request], Awaitable[str]]
 
 
 async def ip_identifier(request: Request) -> str:  # noqa: RUF029
     """
-    Идентификация клиента по IP адресу (учитывает X-Forwarded-For при наличии прокси)
+    Идентификация клиента по IP адресу (учитывает X-Forwarded-For при наличии прокси).
     """
 
     forwarded = request.headers.get("X-Forwarded-For")
@@ -63,9 +62,7 @@ async def ip_identifier(request: Request) -> str:  # noqa: RUF029
 
 @dataclass
 class RateLimitConfig:
-    """
-    Параметры для конфигурации Rate Limiter
-    """
+    """Параметры для конфигурации Rate Limiter."""
 
     max_requests: int
     window_seconds: int
@@ -74,9 +71,7 @@ class RateLimitConfig:
 
 @dataclass
 class RateLimitResult:
-    """
-    Результат проверки ограничителя запросов
-    """
+    """Результат проверки ограничителя запросов."""
 
     allowed: bool
     current: int
@@ -93,15 +88,12 @@ class RateLimiter:
     async def check_limit(
             self, client_id: str, endpoint: str, max_requests, window_seconds: int
     ) -> RateLimitResult:
-        # 1. Формирование уникального ключа запроса
         key = f"{self.prefix}:{endpoint}:{client_id}"
 
-        # 2. Преобразование к миллисекундам
         now_ms = time.time_ns() // 1_000_000
         window_ms = window_seconds * 1000
         member = f"{now_ms}_{random.getrandbits(32):08x}"
 
-        # 3. Выполнение Lua скрипта
         try:
             allowed, current_count = await self._script(
                 keys=[key], args=[now_ms, window_ms, max_requests, member]
@@ -133,26 +125,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     @classmethod
     def register(cls, path: str, method: str, config: RateLimitConfig):
-        """Настройка ограничителя длч конкретного endpoint"""
+        """Настройка ограничителя для конкретного endpoint."""
 
         path = path.rstrip("/")
         cls._registry[path, method.upper()] = config
 
     async def dispatch(self, request: Request, call_next):
-        # 1. Получение конфигурации для текущего endpoint
         path = request.url.path.rstrip("/")
         method = request.method
         config = self._registry.get((path, method))
 
-        # 2. Если нет конфигурации, то пропуск
         if config is None:
             return await call_next(request)
 
-        # 3. Определение клиента
         identifier = config.identifier or self.fallback_identifier
         client_id = await identifier(request)
 
-        # 4. Проверка лимита
         result = await self.limiter.check_limit(
             client_id=client_id,
             endpoint=path,

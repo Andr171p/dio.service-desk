@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import Depends, Query
 
-from src.activity.dependencies import ActivityLogRecorderDep
+from src.activity.dependencies import ActivityRecorderDep
 from src.core.database import session_factory
 from src.crm.dependencies import CounterpartyRepoDep
 from src.crm.domain.entities import Counterparty
@@ -58,7 +58,7 @@ def get_ticket_service(
         project_repo: ProjectRepoDep,
         user_repo: UserRepoDep,
         ticket_authz_service: TicketAuthZServiceDep,
-        activity_log_recorder: ActivityLogRecorderDep,
+        activity_log_recorder: ActivityRecorderDep,
         event_publisher: EventPublisherDep
 ) -> TicketService:
     return TicketService(

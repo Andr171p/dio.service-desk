@@ -3,18 +3,76 @@ from typing import Any
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import UUID5, BaseModel, Field, PositiveInt
 
 from ..domain.vo import RuleKind, StatusCategory, StatusKind
 
 
-class RuleResponse(BaseModel):
-    """Правило/действие, которе выполняется в момент перехода."""
+class RuleCreate(BaseModel):
+    """Создание конфигурации правила."""
 
     type: str = Field(description="Строковый идентификатор", examples=["required_field"])
     kind: RuleKind = Field(description="Вид правила: `guard` - по перехода, `action` - после.")
     config: dict[str, Any] = Field(description="Конфигурация в формате JSON.")
     order: PositiveInt = Field(description="Порядок выполнения.")
+
+
+class RuleUpdate(BaseModel):
+    """Обновление конфигурации правила."""
+
+    config: dict[str, Any] | None = Field(None, description="Конфигурация в формате JSON.")
+    order: PositiveInt | None = Field(None, description="Порядок выполнения.")
+
+
+class RuleResponse(BaseModel):
+    """Правило/действие, которе выполняется в момент перехода."""
+
+    id: UUID5 = Field(
+        description="Детерминированный идентификатор, вычисляется на основе атрибутов.",
+    )
+    type: str = Field(description="Строковый идентификатор", examples=["required_field"])
+    kind: RuleKind = Field(description="Вид правила: `guard` - по перехода, `action` - после.")
+    config: dict[str, Any] = Field(description="Конфигурация в формате JSON.")
+    order: PositiveInt = Field(description="Порядок выполнения.")
+
+
+# ========================================================================================
+# Status DTOs
+# ========================================================================================
+
+
+class StatusCreate(BaseModel):
+    """Добавить новый статус."""
+
+    name: str = Field(description="Название статуса.", exclude=["TODO", "IN_PROGRESS"])
+    description: str | None = Field(None, description="Человекочитаемое описание.")
+
+    color: str = Field(description="HEX-код для отображения цвета в UI.", examples=["#eb4034"])
+    category: StatusCategory = Field(
+        description="Категория статуса: начальный, рабочий, финальный."
+    )
+    kind: StatusKind = Field(description="Вид статуса.")
+
+    order: PositiveInt = Field(description="Порядковый номер.")
+
+
+class StatusUpdate(BaseModel):
+    """Обновить статус."""
+
+    name: str | None = Field(
+        None, description="Название статуса.", exclude=["TODO", "IN_PROGRESS"],
+    )
+    description: str | None = Field(None, description="Человекочитаемое описание.")
+
+    color: str | None = Field(
+        None, description="HEX-код для отображения цвета в UI.", examples=["#eb4034"],
+    )
+    category: StatusCategory | None = Field(
+        None, description="Категория статуса: начальный, рабочий, финальный.",
+    )
+    kind: StatusKind | None = Field(None, description="Вид статуса.")
+
+    order: PositiveInt | None = Field(None, description="Порядковый номер.")
 
 
 class StatusResponse(BaseModel):
@@ -34,6 +92,35 @@ class StatusResponse(BaseModel):
     kind: StatusKind = Field(description="Вид статуса.")
 
     order: PositiveInt = Field(description="Порядковый номер.")
+
+
+# ========================================================================================
+# Transition DTOs
+# ========================================================================================
+
+
+class TransitionCreate(BaseModel):
+    """Создание перехода Workflow."""
+
+    name: str = Field(description="Человекочитаемое название перехода.")
+
+    sources: set[UUID] = Field(description="Статусы из которых можно совершить переход.")
+    destination: UUID = Field(description="Статус в который выполняется переход.")
+
+    rules: list[RuleCreate] = Field(
+        default_factory=list, description="Правила которые должны выполниться при переходе."
+    )
+
+
+class TransitionUpdate(BaseModel):
+    """Обновление перехода между статусами."""
+
+    name: str | None = Field(None, description="Человекочитаемое название перехода.")
+
+    sources: set[UUID] = Field(
+        default_factory=set, description="Статусы из которых можно совершить переход.",
+    )
+    destination: UUID | None = Field(None, description="Статус в который выполняется переход.")
 
 
 class TransitionResponse(BaseModel):
@@ -66,6 +153,13 @@ class WorkflowCreate(BaseModel):
     version: PositiveInt = Field(description="Версия Workflow", examples=[1, 2, 3])
 
 
+class WorkflowUpdate(BaseModel):
+    """Редактирование справочной информации."""
+
+    name: str | None = None
+    description: str | None = None
+
+
 class WorkflowResponse(BaseModel):
     """Рабочий процесс (ориентированный граф)."""
 
@@ -79,8 +173,9 @@ class WorkflowResponse(BaseModel):
     is_default: bool = Field(description="Является ли процессом по умолчанию.")
     is_active: bool = Field(description="is_active=True - процесс готов к эксплуатации.")
     version: PositiveInt = Field(description="Версия Workflow", examples=[1, 2, 3])
+    author_id: UUID | None = Field(None, description="Автор рабочего процесса.")
 
-    initial_status_id: UUID = Field(description="Исходное состояние.")
+    initial_status_id: UUID | None = Field(None, description="Исходное состояние.")
     statuses: list[StatusResponse] = Field(
         default_factory=list, description="Все возможные статусы (вершины графа)."
     )

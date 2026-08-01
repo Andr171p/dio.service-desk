@@ -19,21 +19,21 @@ from .schemas import ActivityLogResponse
 ActivityLogPaginatorFunc = Callable[[str, UUID], Awaitable[Page[ActivityLogResponse]]]
 
 
-def get_activity_log_repo(session: SessionDep) -> SqlActivityLogRepository:
+def get_activity_repo(session: SessionDep) -> SqlActivityLogRepository:
     return SqlActivityLogRepository(session)
 
 
-ActivityLogRepoDep = Annotated[ActivityLogRepository, Depends(get_activity_log_repo)]
+ActivityRepoDep = Annotated[ActivityLogRepository, Depends(get_activity_repo)]
 
 
-def get_activity_log_recorder(activity_log_repo: ActivityLogRepoDep) -> ActivityRecorder:
+def get_activity_recorder(activity_log_repo: ActivityRepoDep) -> ActivityRecorder:
     return ActivityRecorder(activity_log_repo)
 
 
-ActivityLogRecorderDep = Annotated[ActivityLogRepository, Depends(get_activity_log_recorder)]
+ActivityRecorderDep = Annotated[ActivityLogRepository, Depends(get_activity_recorder)]
 
 
-def get_activity_log_filters(
+def get_activity_filters(
         actor_id: UUID | None = Query(None, description="Субъект выполнивший действие"),
         actions: list[str] | None = Query(None, min_length=1, description="Список действий"),
         occurred_after: datetime | None = Query(None, description="Произошло после"),
@@ -47,11 +47,11 @@ def get_activity_log_filters(
     )
 
 
-ActivityLogFiltersDep = Annotated[ActivityLogFilters, Depends(get_activity_log_filters)]
+ActivityLogFiltersDep = Annotated[ActivityLogFilters, Depends(get_activity_filters)]
 
 
-async def paginate_activity_logs(
-        activity_log_repo: ActivityLogRepoDep,
+async def paginate_activities(
+        activity_log_repo: ActivityRepoDep,
         aggregate_type: str,
         aggregate_id: UUID,
         pagination: PaginationDep,
@@ -63,13 +63,13 @@ async def paginate_activity_logs(
     return page.to_response(map_activity_log_to_response)
 
 
-async def get_activity_logs_paginator(  # noqa: RUF029
-        activity_log_repo: ActivityLogRepoDep,
+async def get_activity_paginator(  # noqa: RUF029
+        activity_repo: ActivityRepoDep,
         pagination: PaginationDep,
         filters: ActivityLogFiltersDep,
 ) -> ActivityLogPaginatorFunc:
     async def paginator(aggregate_type: str, aggregate_id: UUID) -> Page[ActivityLogResponse]:
-        page = await activity_log_repo.get_for_aggregate(
+        page = await activity_repo.get_for_aggregate(
             aggregate_type,
             aggregate_id,
             pagination=pagination,

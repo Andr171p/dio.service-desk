@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..core.broker import broker
+from ..core.broker import rabbit_broker
 from ..iam.dependencies import UserRepoDep
 from ..projects.dependencies import ProjectMemberRepoDep
 from ..shared.dependencies import SessionDep, get_mail_sender
@@ -35,7 +35,7 @@ def get_email_channel(user_repo: UserRepoDep) -> NotificationChannel:
     return EmailChannel(mail_sender=get_mail_sender(), user_repo=user_repo)
 
 
-in_app_channel = InAppChannel(broker)
+in_app_channel = InAppChannel(rabbit_broker)
 
 
 def get_notification_repo(session: SessionDep) -> SqlNotificationRepository:

@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, Query
 
-from src.activity.dependencies import ActivityLogRecorderDep
+from src.activity.dependencies import ActivityRecorderDep
 from src.iam.dependencies import UserRepoDep
 from src.projects.dependencies import ProjectRepoDep
 from src.shared.dependencies import EventPublisherDep, SessionDep
@@ -28,7 +28,7 @@ def get_task_service(
         ticket_repo: TicketRepoDep,
         user_repo: UserRepoDep,
         project_repo: ProjectRepoDep,
-        activity_log_recorder: ActivityLogRecorderDep,
+        activity_log_recorder: ActivityRecorderDep,
         event_publisher: EventPublisherDep,
 ) -> TaskService:
     return TaskService(

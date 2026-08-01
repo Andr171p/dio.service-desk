@@ -1,7 +1,39 @@
+from typing import Any
+
+import json
+from collections.abc import Mapping
+
 from src.shared.infra.repos import ModelMapper
-from src.workflows.domain.entities import Status, Transition, Workflow
+from src.workflows.domain.entities import Rule, Status, Transition, Workflow
+from src.workflows.domain.vo import RuleKind
 
 from .models import StatusOrm, TransitionOrm, WorkflowOrm
+
+
+def _map_rule_to_dict(rule: Rule) -> Mapping[str, Any]:
+    return {
+        "type_": rule.type_,
+        "kind": rule.kind.value,
+        "config": rule.config,
+        "order": rule.order,
+    }
+
+
+def _build_rule_from_dict(raw: Mapping[str, Any]) -> Rule:
+    kind_str = raw.get("kind")
+    if kind_str is None:
+        raise ValueError(f"Kind required for rule building, raw JSON: {json.dumps(raw)}")
+
+    order = raw.get("order")
+    if order is None:
+        raise ValueError("Missing rule order")
+
+    return Rule(
+        type_=raw.get("type_", ""),
+        kind=RuleKind(kind_str),
+        config=raw.get("config", {}),
+        order=int(order),
+    )
 
 
 class _StatusMapper(ModelMapper[Status, StatusOrm]):
@@ -47,7 +79,7 @@ class _TransitionMapper(ModelMapper[Transition, TransitionOrm]):
             name=model.name,
             sources=set(model.sources),
             destination=model.destination,
-            rules=tuple(model.rules)
+            rules=[_build_rule_from_dict(rule) for rule in model.rules],
         )
 
     @staticmethod
@@ -60,7 +92,7 @@ class _TransitionMapper(ModelMapper[Transition, TransitionOrm]):
             name=entity.name,
             sources=list(entity.sources),
             destination=entity.destination,
-            rules=list(entity.rules),
+            rules=[_map_rule_to_dict(rule) for rule in entity.rules],
         )
 
 

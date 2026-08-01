@@ -39,11 +39,13 @@ Workflow Rule Registry
 3. Workflow Engine во время выполнения:
        definition = get_rule(rule.type_)
        config = definition.config_schema.model_validate(rule.config)
-       definition.executor(aggregate, config)
+       definition.executor(aggregate_type, config)
 
 Регистрация происходит автоматически при импорте модуля,
 в котором объявлен ``@rule``.
 """
+
+from typing import get_type_hints
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -81,6 +83,8 @@ class RuleDefinition[AggregateT: AggregateRoot, ConfigT: BaseModel]:
     display_name: str
     description: str
     config_schema: type[ConfigT]
+
+    aggregate_type: type[AggregateT]
 
     executor: RuleExecutor[AggregateT, ConfigT]
 
@@ -135,6 +139,10 @@ def rule[AggregateT: AggregateRoot, ConfigT: BaseModel](
     def decorator(
             executor: RuleExecutor[AggregateT, ConfigT],
     ) -> RuleExecutor[AggregateT, ConfigT]:
+
+        hints = get_type_hints(executor)
+        aggregate_type = hints[0]
+
         register_rule(
             RuleDefinition(
                 type_=type_,
@@ -142,6 +150,7 @@ def rule[AggregateT: AggregateRoot, ConfigT: BaseModel](
                 display_name=display_name,
                 description=description,
                 config_schema=config_schema,
+                aggregate_type=aggregate_type,
                 executor=executor,
             )
         )

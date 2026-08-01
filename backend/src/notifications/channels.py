@@ -6,7 +6,7 @@ from faststream.rabbit import RabbitBroker
 
 from src.iam.domain.repos import UserRepository
 from src.shared.domain.exceptions import EmailSendingFailedError
-from src.shared.infra.mail import SmtpMailSender
+from src.shared.infra.mail import SmtpMailClient
 
 from .domain.entities import Notification
 from .domain.exceptions import NotificationSendingFailedError
@@ -34,7 +34,7 @@ EMAIL_TEMPLATE_MAP: dict[NotificationType, str] = {
 class EmailChannel:
     channel_type = ChannelType.EMAIL
 
-    def __init__(self, mail_sender: SmtpMailSender, user_repo: UserRepository) -> None:
+    def __init__(self, mail_sender: SmtpMailClient, user_repo: UserRepository) -> None:
         self.mail_sender = mail_sender
         self.user_repo = user_repo
 
