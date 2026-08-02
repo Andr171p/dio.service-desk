@@ -83,6 +83,6 @@ class ProjectOrm(Base):
 
     __table_args__ = (
         Index("ix_projects_owner_status", "owner_id", "status"),
-        Index("ix_projects_counterparty", "counterparty_id"),
+        Index("ix_projects_counterparty", "organization_id"),
         Index("ix_projects_key", "key"),
     )

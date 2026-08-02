@@ -181,7 +181,7 @@ def user_factory(fake_user_repo):
         counterparty_id = None
 
         if role.is_customer():
-            counterparty_id = overrides.pop("counterparty_id", uuid4())
+            counterparty_id = overrides.pop("organization_id", uuid4())
 
         user = User(
             id=user_id,
@@ -205,7 +205,7 @@ def project_factory(fake_project_repo):
             name=overrides.pop("name", "Test Project"),
             key=overrides.pop("key", "TESTPRJ"),
             created_by=overrides.pop("created_by", uuid4()),
-            counterparty_id=overrides.pop("counterparty_id", None)
+            counterparty_id=overrides.pop("organization_id", None)
         )
         await fake_project_repo.create(project)
         return project
@@ -259,7 +259,7 @@ def ticket_factory(fake_ticket_repo):
             assignee_id=assignee_id,
             closed_at=closed_at,
             project_id=overrides.pop("project_id", None),
-            counterparty_id=overrides.pop("counterparty_id", None),
+            counterparty_id=overrides.pop("organization_id", None),
             product_id=overrides.pop("product_id", None),
             tags=overrides.pop("tags", []),
             attachments=overrides.pop("attachments", []),

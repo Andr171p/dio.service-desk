@@ -89,7 +89,7 @@ def create_access_token(
         "sub_type": SubjectType.USER.value,
     }
     if counterparty_id is not None:
-        payload["counterparty_id"] = f"{counterparty_id}"
+        payload["organization_id"] = f"{counterparty_id}"
 
     return jwt.encode(payload=payload, key=settings.secret_key, algorithm=settings.jwt.algorithm)
 

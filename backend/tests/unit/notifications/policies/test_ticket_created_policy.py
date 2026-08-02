@@ -46,7 +46,7 @@ def fake_user(**kwargs):
         username=Username(fake.user_name()),
         full_name=FullName("Иванов Иван Иванович"),
         role=kwargs.get("role", UserRole.SUPPORT_AGENT),
-        counterparty_id=kwargs.get("counterparty_id"),
+        counterparty_id=kwargs.get("organization_id"),
         password_hash=SecretStr("hashed"),
         is_active=True,
     )

@@ -54,7 +54,7 @@ class TestValidateToken:
             assert payload["email"] == email
             assert payload["role"] == user_role.value
             assert payload["type_"] == "access"
-            assert "counterparty_id" not in payload
+            assert "organization_id" not in payload
 
             assert isinstance(payload["iat"], (int, float))
             assert isinstance(payload["exp"], (int, float))
@@ -77,7 +77,7 @@ class TestValidateToken:
             assert payload["email"] == email
             assert payload["role"] == user_role.value
             assert payload["type_"] == "access"
-            assert payload["counterparty_id"] == str(counterparty_id)
+            assert payload["organization_id"] == str(counterparty_id)
 
     def test_validate_token_correct_refresh_token(self):
         user_id = uuid4()
@@ -91,7 +91,7 @@ class TestValidateToken:
             assert payload["type_"] == "refresh"
             assert "email" not in payload
             assert "role" not in payload
-            assert "counterparty_id" not in payload
+            assert "organization_id" not in payload
 
             assert isinstance(payload["iat"], (int, float))
             assert isinstance(payload["exp"], (int, float))
@@ -159,7 +159,7 @@ class TestCreateAccessToken:
 
             assert payload["iat"] == expected_iat
             assert payload["exp"] == expected_exp
-            assert "counterparty_id" not in payload
+            assert "organization_id" not in payload
 
     def test_create_and_validate_access_token_with_counterparty(self):
         user_id = uuid4()
@@ -185,8 +185,8 @@ class TestCreateAccessToken:
 
             assert payload["iat"] == expected_iat
             assert payload["exp"] == expected_exp
-            assert "counterparty_id" in payload
-            assert payload["counterparty_id"] == f"{counterparty_id}"
+            assert "organization_id" in payload
+            assert payload["organization_id"] == f"{counterparty_id}"
 
 
 class TestCreateRefreshToken:
@@ -209,4 +209,4 @@ class TestCreateRefreshToken:
 
             assert payload["iat"] == expected_iat
             assert payload["exp"] == expected_exp
-            assert "counterparty_id" not in payload
+            assert "organization_id" not in payload

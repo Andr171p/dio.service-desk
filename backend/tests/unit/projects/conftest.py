@@ -28,7 +28,7 @@ def project_factory():
             name=name,
             key=key,
             description=kwargs.pop("description", None),
-            counterparty_id=kwargs.pop("counterparty_id", uuid4()),
+            counterparty_id=kwargs.pop("organization_id", uuid4()),
             status=kwargs.pop("status", ProjectStatus.ACTIVE),
             owner_id=created_by,
             created_by=created_by,

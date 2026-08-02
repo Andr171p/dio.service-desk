@@ -47,7 +47,7 @@ async def create_counterparty(
 
 
 @router.get(
-    path="/{counterparty_id}",
+    path="/{organization_id}",
     response_model=CounterpartyResponse,
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(get_current_user)],
@@ -60,7 +60,7 @@ async def get_counterparty(
 
 
 @router.post(
-    path="/{counterparty_id}",
+    path="/{organization_id}",
     response_model=CounterpartyResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_role(REQUIRED_ROLES))],
@@ -78,7 +78,7 @@ async def add_branch(
 
 
 @router.patch(
-    path="/{counterparty_id}",
+    path="/{organization_id}",
     status_code=status.HTTP_200_OK,
     response_model=CounterpartyResponse,
     dependencies=[Depends(require_role(REQUIRED_ROLES))],
@@ -104,7 +104,7 @@ async def get_counterparties(
 
 
 @router.delete(
-    path="/{counterparty_id}",
+    path="/{organization_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(require_role(REQUIRED_ROLES))],
     summary="Удаление контрагента",
@@ -115,7 +115,7 @@ async def delete_counterparty(counterparty_id: UUID, repository: CounterpartyRep
 
 
 @router.post(
-    path="/{counterparty_id}/contact-persons",
+    path="/{organization_id}/contact-persons",
     status_code=status.HTTP_201_CREATED,
     response_model=CounterpartyResponse,
     dependencies=[Depends(require_role(REQUIRED_ROLES))],
@@ -128,7 +128,7 @@ async def add_contact_person(
 
 
 @router.delete(
-    path="/{counterparty_id}/contact-persons",
+    path="/{organization_id}/contact-persons",
     status_code=status.HTTP_200_OK,
     response_model=CounterpartyResponse,
     dependencies=[Depends(require_role(REQUIRED_ROLES))],
@@ -144,7 +144,7 @@ async def delete_contact_person(
 
 
 @router.get(
-    path="/{counterparty_id}/customers",
+    path="/{organization_id}/customers",
     status_code=status.HTTP_200_OK,
     response_model=Page[UserResponse],
     dependencies=[Depends(require_role({UserRole.CUSTOMER_ADMIN} | UserRole.staff_roles()))],
@@ -159,7 +159,7 @@ async def get_counterparty_customers(
 
 
 @router.post(
-    path="/{counterparty_id}/products",
+    path="/{organization_id}/products",
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_role(REQUIRED_ROLES))],
     summary="Привязка программного продукта к контрагенту"
@@ -176,7 +176,7 @@ async def link_counterparty_product(
 
 
 @router.get(
-    path="/{counterparty_id}/products",
+    path="/{organization_id}/products",
     status_code=status.HTTP_200_OK,
     response_model=Page[ProductResponse],
     dependencies=[Depends(get_current_user)],

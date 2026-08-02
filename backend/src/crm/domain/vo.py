@@ -10,6 +10,20 @@ from ...iam.domain.vo import FullName
 from ...shared.domain.vo import ValueObject
 
 
+class OrganizationKind(StrEnum):
+    """
+    Вид организации в системе.
+
+    - `platform` - организация предоставляющая услуги;
+    - `customer` - внешний заказчик;
+    - `partner` - помогает внедрять и обслуживать систему.
+    """
+
+    PLATFORM = "platform"
+    CUSTOMER = "customer"
+    PARTNER = "partner"
+
+
 class CounterpartyType(StrEnum):
     """Типы контрагентов"""
 

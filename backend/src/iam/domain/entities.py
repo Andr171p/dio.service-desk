@@ -1,47 +1,21 @@
-from typing import Self
+from typing import Annotated, Self
 
 import secrets
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from uuid import UUID
+
+from typing_extensions import Doc
 
 from src.shared.domain.entities import Entity
 from src.shared.domain.exceptions import InvariantViolationError
 from src.shared.utils.time import current_datetime, get_expiration_time
 
 from .events import UserInvited
-from .vo import Email, FullName, PasswordHash, Username, UserRole, UserType
+from .types import RoleId
+from .vo import Email, FullName, PasswordHash, Username
 
 INVITATION_EXPIRES_IN_DAYS = 7
-
-
-def _validate_roles_consistency(roles: set[UserRole]) -> None:
-    """
-    Проверяет, что набор ролей не содержит одновременно клиентские и сотруднические роли.
-    """
-
-    customer_roles = roles & UserRole.customer_roles()
-    staff_roles = roles & UserRole.staff_roles()
-
-    if customer_roles and staff_roles:
-        raise InvariantViolationError("User cannot be both customer and staff")
-
-
-def _validate_counterparty(roles: set[UserRole], counterparty_id: UUID | None = None) -> None:
-    """
-    Проверяет согласованность набора ролей и контрагента.
-    Рекомендуется вызывать после `_validate_roles_consistency`.
-    """
-
-    customer_roles = roles & UserRole.customer_roles()
-    staff_roles = roles & UserRole.staff_roles()
-
-    if customer_roles and counterparty_id is None:
-        raise InvariantViolationError("Counterparty must be specified for clients")
-
-    if staff_roles and counterparty_id is not None:
-        raise InvariantViolationError("Staff users should not have direct counterparty")
 
 
 def _generate_invite_token(length: int = 32) -> str:
@@ -56,104 +30,222 @@ def _generate_invite_token(length: int = 32) -> str:
 class User(Entity):
     """
     Пользователь системы (человек).
+
+    User представляет физического пользователя независимо
+    от организаций, в которых он состоит.
+
+    Не содержит ролей или разрешений.
+
+    Один пользователь может одновременно состоять
+    в нескольких организациях через Membership и иметь
+    в каждой из них собственный набор ролей.
+
+    Отвечает только за:
+
+    - аутентификацию;
+    - персональные данные;
+    - глобальный жизненный цикл учетной записи.
     """
 
     email: Email
     username: Username | None = None
     full_name: FullName | None = None
     avatar_url: str | None = None
-    roles: set[UserRole]
-    counterparty_id: UUID | None = None
     password_hash: PasswordHash
     is_active: bool = True
 
+
+@dataclass(kw_only=True)
+class ServiceAccount(Entity):
+    """
+    Сервисная учетная запись.
+
+    Используется для машинной аутентификации
+    (AI-агенты, интеграции, внешние сервисы,
+    CLI, backend-to-backend взаимодействие).
+
+    В отличие от User:
+
+    - не принадлежит человеку;
+    - использует client_id/client_secret;
+    - всегда принадлежит одной организации;
+    - получает роли аналогично Membership.
+
+    После успешной аутентификации преобразуется
+    в Subject так же, как и обычный пользователь.
+    """
+
+    name: str
+
+    client_id: str
+    client_secret_hash: ...
+
+    organization_id: UUID
+
+    roles: set[UUID]
+    is_active: bool = True
+
+
+@dataclass(kw_only=True)
+class Membership(Entity):
+    """
+    Членство пользователя в организации.
+
+    Membership является источником авторизации.
+
+    Именно Membership определяет:
+
+    • в какой организации работает пользователь;
+    • какие роли действуют;
+    • срок действия доступа;
+    • активность доступа.
+
+    Один User может иметь множество Membership.
+
+    Пример:
+
+        User
+            ├── Membership (OpenAI)
+            │      ├── Admin
+            │      └── HR
+            │
+            └── Membership (Microsoft)
+                   └── Viewer
+
+    Все проверки доступа выполняются относительно
+    конкретного Membership.
+    """
+
+    user_id: UUID
+    organization_id: UUID
+    roles: set[RoleId]
+    expires_at: datetime | None = None
+    is_active: bool = True
+
     def __post_init__(self) -> None:
+        if not self.roles:
+            raise InvariantViolationError("Membership must contain at least one role.")
 
-        _validate_roles_consistency(self.roles)
-
-        _validate_counterparty(self.roles, self.counterparty_id)
-
-    @property
-    def is_staff(self) -> bool:
-        return any(role.is_staff for role in self.roles)
+        if self.is_expired and self.is_active:
+            raise InvariantViolationError("Expired membership cannot be active.")
 
     @property
-    def is_customer(self) -> bool:
-        return any(role.is_customer for role in self.roles)
+    def is_expired(self) -> None:
+        return self.expires_at is not None and self.expires_at <= current_datetime()
 
-    @property
-    def type(self) -> UserType:
-        return UserType.STAFF if self.is_staff else UserType.CUSTOMER
+    def extend(self, expires_at: datetime) -> None:
+        """Продление сотрудничества на определённый срок."""
 
-    def has_role(self, role: UserRole) -> bool:
-        return role in self.roles
-
-    def has_any_role(self, roles: Iterable[UserRole]) -> bool:
-        return bool(self.roles & set(roles))
-
-    def has_all_roles(self, roles: Iterable[UserRole]) -> bool:
-        return set(roles).issubset(self.roles)
-
-    def grant_role(self, role: UserRole) -> None:
-        if role in self.roles:
-            return
-
-        new_roles = self.roles | {role}
-        _validate_roles_consistency(new_roles)
-        _validate_counterparty(new_roles, self.counterparty_id)
-
-        self.roles.add(role)
+        self.expires_at = expires_at
         self.updated_at = current_datetime()
 
-    def revoke_role(self, role: UserRole) -> None:
+    def expire(self) -> None:
+        """Досрочно завершить срок."""
+
+        if self.expires_at and current_datetime() < self.expires_at:
+            self.expires_at = current_datetime()
+            self.updated_at = current_datetime()
+
+    def has_role(self, role_id: RoleId) -> bool:
+        return role_id in self.roles
+
+    def has_any_role(self, roles: set[RoleId]) -> bool:
+        return bool(self.roles & roles)
+
+    def has_all_roles(self, roles: set[RoleId]) -> bool:
+        return roles.issubset(self.roles)
+
+    def grant_role(self, role_id: RoleId) -> None:
+
+        if role_id in self.roles:
+            return
+
+        self.roles.add(role_id)
+        self.updated_at = current_datetime()
+
+    def revoke_role(self, role_id: RoleId) -> None:
+
+        if role_id not in self.roles:
+            return
+
         if len(self.roles) == 1:
-            raise InvariantViolationError("User must have at least one role")
+            raise InvariantViolationError("Membership must contain at leat one role.")
 
-        if role not in self.roles:
-            return
-
-        new_roles = self.roles - {role}
-
-        _validate_roles_consistency(new_roles)
-        _validate_counterparty(new_roles, self.counterparty_id)
-
-        self.roles.remove(role)
+        self.roles.remove(role_id)
         self.updated_at = current_datetime()
 
-    def replace_roles(self, new_roles: set[UserRole]) -> None:
-        if not new_roles:
-            raise InvariantViolationError("User must have at least one role")
 
-        if new_roles == self.roles:
+@dataclass(frozen=True, slots=True)
+class Permission:
+    """
+    Разрешение на выполнение одного действия.
+    Permission является минимальной единицей авторизации.
+
+    Формируется из пары: resource + action
+
+    Например: `task.read`, `task.update`, `task.delete`.
+
+    Permission не является сущностью, так как полностью определяется своим кодом.
+    """
+
+    resource: str
+    action: str
+
+    description: str | None = None
+
+    @property
+    def code(self) -> str:
+        return f"{self.resource}.{self.action}"
+
+
+@dataclass(kw_only=True)
+class Role(Entity):
+    """"""
+
+    name: str
+    code: str
+    description: str | None = None
+
+    permissions: set[str]
+    is_default: Annotated[bool, Doc("Является ли роль системной")]
+
+    def has_permission(self, permission: str) -> bool:
+        return permission in self.permissions
+
+    def grant_permission(self, permission: str) -> None:
+
+        if permission in self.permissions:
             return
 
-        _validate_roles_consistency(new_roles)
-        _validate_counterparty(new_roles, self.counterparty_id)
+        self.permissions.add(permission)
+        self.updated_at = current_datetime()
 
-        self.roles = new_roles
+    def revoke_permission(self, permission: str) -> None:
+
+        if permission not in self.permissions:
+            return
+
+        if len(self.permissions) == 1:
+            raise InvariantViolationError("Role must contain a leat one permission.")
+
+        self.permissions.discard(permission)
         self.updated_at = current_datetime()
 
 
 @dataclass(kw_only=True)
 class Invitation(Entity):
-    """
-    Приглашение пользователя в систему.
-    """
+    """Приглашение пользователя в систему."""
 
     email: Email
     token: str = field(default_factory=_generate_invite_token)
     invited_by: UUID
-    granted_roles: set[UserRole]
-    counterparty_id: UUID | None = None
+
+    granted_roles: set[RoleId]
+    organization_id: UUID
     expires_at: datetime
+
     used_at: datetime | None = None
     is_used: bool = False
-
-    def __post_init__(self) -> None:
-
-        _validate_roles_consistency(self.granted_roles)
-
-        _validate_counterparty(self.granted_roles, self.counterparty_id)
 
     @property
     def is_valid(self) -> bool:
@@ -164,15 +256,15 @@ class Invitation(Entity):
             cls,
             email: Email,
             invited_by: UUID,
-            granted_roles: set[UserRole],
-            counterparty_id: UUID | None = None,
+            granted_roles: set[RoleId],
+            organization_id: UUID,
     ) -> Self:
         expires_at = get_expiration_time(expires_in=timedelta(days=INVITATION_EXPIRES_IN_DAYS))
         invitation = cls(
             email=email,
             invited_by=invited_by,
             granted_roles=granted_roles,
-            counterparty_id=counterparty_id,
+            organization_id=organization_id,
             expires_at=expires_at,
         )
         invitation.invite()
@@ -184,7 +276,7 @@ class Invitation(Entity):
                 invitation_id=self.id,
                 email=self.email,
                 granted_roles=self.granted_roles,
-                counterparty_id=self.counterparty_id,
+                counterparty_id=self.organization_id,
                 invited_by=self.invited_by,
             )
         )

@@ -23,7 +23,7 @@ class UserOrm(Base):
     is_active: Mapped[bool]
 
     __table_args__ = (
-        Index("ix_users_counterparty_id", "counterparty_id"),
+        Index("ix_users_counterparty_id", "organization_id"),
         Index("ix_users_is_active", "is_active"),
         Index("ix_users_roles_gin", "roles", postgresql_using="gin"),
     )

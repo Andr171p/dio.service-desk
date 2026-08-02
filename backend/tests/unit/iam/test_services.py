@@ -155,8 +155,8 @@ class TestCreateTokensForUser:
         assert access_payload["role"] == user.role
 
         if user.counterparty_id is not None:
-            assert "counterparty_id" in access_payload
-            assert access_payload["counterparty_id"] == f"{user.counterparty_id}"
+            assert "organization_id" in access_payload
+            assert access_payload["organization_id"] == f"{user.counterparty_id}"
 
         # 4. Проверка refresh токена
         assert refresh_payload["sub"] == f"{user.id}"

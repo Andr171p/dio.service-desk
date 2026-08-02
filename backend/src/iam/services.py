@@ -222,7 +222,7 @@ class InvitationService:
                 email=Email(data.email),
                 invited_by=current_subject.id,
                 granted_roles=data.granted_roles,
-                counterparty_id=data.counterparty_id,
+                organization_id=data.counterparty_id,
             )
             await self.invitation_repo.create(invitation)
             await self.uow.commit()

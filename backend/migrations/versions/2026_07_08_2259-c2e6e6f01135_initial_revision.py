@@ -68,7 +68,7 @@ def upgrade() -> None:
     sa.Column('token', sa.String(), nullable=False),
     sa.Column('invited_by', sa.Uuid(), nullable=False),
     sa.Column('granted_roles', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('counterparty_id', sa.Uuid(), nullable=True),
+    sa.Column('organization_id', sa.Uuid(), nullable=True),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('used_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_used', sa.Boolean(), nullable=False),
@@ -170,7 +170,7 @@ def upgrade() -> None:
     sa.Column('full_name', sa.String(), nullable=True),
     sa.Column('avatar_url', sa.String(), nullable=True),
     sa.Column('roles', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('counterparty_id', sa.Uuid(), nullable=True),
+    sa.Column('organization_id', sa.Uuid(), nullable=True),
     sa.Column('password_hash', sa.String(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
@@ -181,17 +181,17 @@ def upgrade() -> None:
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('password_hash')
     )
-    op.create_index('ix_users_counterparty_id', 'users', ['counterparty_id'], unique=False)
+    op.create_index('ix_users_counterparty_id', 'users', ['organization_id'], unique=False)
     op.create_index('ix_users_is_active', 'users', ['is_active'], unique=False)
     op.create_index('ix_users_roles_gin', 'users', ['roles'], unique=False, postgresql_using='gin')
     op.create_table('counterparty_products',
-    sa.Column('counterparty_id', sa.Uuid(), nullable=False),
+    sa.Column('organization_id', sa.Uuid(), nullable=False),
     sa.Column('product_id', sa.Uuid(), nullable=False),
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
-    sa.ForeignKeyConstraint(['counterparty_id'], ['counterparties.id'], ),
+    sa.ForeignKeyConstraint(['organization_id'], ['counterparties.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['software_products.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -199,7 +199,7 @@ def upgrade() -> None:
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('key', sa.String(), nullable=False),
     sa.Column('description', sa.TEXT(), nullable=True),
-    sa.Column('counterparty_id', sa.Uuid(), nullable=True),
+    sa.Column('organization_id', sa.Uuid(), nullable=True),
     sa.Column('status', sa.Enum('ACTIVE', 'ON_HOLD', 'ARCHIVED', 'COMPLETED', name='projectstatus'), nullable=False),
     sa.Column('owner_id', sa.Uuid(), nullable=False),
     sa.Column('created_by', sa.Uuid(), nullable=False),
@@ -207,11 +207,11 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
-    sa.ForeignKeyConstraint(['counterparty_id'], ['counterparties.id'], ),
+    sa.ForeignKeyConstraint(['organization_id'], ['counterparties.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('key')
     )
-    op.create_index('ix_projects_counterparty', 'projects', ['counterparty_id'], unique=False)
+    op.create_index('ix_projects_counterparty', 'projects', ['organization_id'], unique=False)
     op.create_index('ix_projects_key', 'projects', ['key'], unique=False)
     op.create_index('ix_projects_owner_status', 'projects', ['owner_id', 'status'], unique=False)
     op.create_table('project_members',
@@ -252,7 +252,7 @@ def upgrade() -> None:
     op.create_index('ix_project_stages_status', 'project_stages', ['status'], unique=False)
     op.create_table('tickets',
     sa.Column('project_id', sa.Uuid(), nullable=True),
-    sa.Column('counterparty_id', sa.Uuid(), nullable=True),
+    sa.Column('organization_id', sa.Uuid(), nullable=True),
     sa.Column('product_id', sa.Uuid(), nullable=True),
     sa.Column('created_by', sa.Uuid(), nullable=False),
     sa.Column('approved_by', sa.Uuid(), nullable=True),

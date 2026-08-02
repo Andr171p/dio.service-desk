@@ -107,7 +107,7 @@ async def get_current_subject(
         type=type_,
         email=Email(payload["email"]) if "email" in payload else None,
         roles=payload.get("roles", []),
-        counterparty_id=payload.get("counterparty_id"),
+        counterparty_id=payload.get("organization_id"),
         scopes=payload.get("scopes", []),
     )
 
