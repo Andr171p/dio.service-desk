@@ -24,7 +24,7 @@ from .security import (
     create_access_token,
     create_refresh_token,
     hash_password_async,
-    validate_token,
+    decode_token,
     verify_password_async,
 )
 
@@ -40,7 +40,7 @@ def create_tokens_for_user(user: User) -> Tokens:
         user_id=user.id,
         user_roles=user.roles,
         email=user.email,
-        counterparty_id=user.counterparty_id,
+        organization_id=user.counterparty_id,
     )
     refresh_token = create_refresh_token(user_id=user.id)
 
@@ -141,7 +141,7 @@ class AuthService:
         Обновление пары токенов с ротацией.
         """
 
-        payload = validate_token(refresh_token)
+        payload = decode_token(refresh_token)
         user_id, jti, exp = payload.get("sub"), payload.get("jti"), payload.get("exp", 0)
 
         if jti is None and user_id is None:
@@ -164,7 +164,7 @@ class AuthService:
         """
 
         try:
-            payload = validate_token(access_token)
+            payload = decode_token(access_token)
             jti, exp, user_id = payload.get("jti"), payload.get("exp", 0), payload.get("author_id")
 
             if jti is not None and exp:
@@ -175,7 +175,7 @@ class AuthService:
 
         if refresh_token is not None:
             try:
-                payload = validate_token(refresh_token)
+                payload = decode_token(refresh_token)
                 jti, exp, user_id = (
                     payload.get("jti"),
                     payload.get("exp", 0),

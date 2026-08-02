@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from src.iam.application.dtos import LoginResponse, TokenRequest, UserCredentials
+from src.iam.application.dtos import LoginResponse, TokenRequest, TokensResponse, UserCredentials
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация | Auth"])
 
@@ -17,7 +17,7 @@ async def login(credentials: UserCredentials) -> LoginResponse: ...
 @router.post(
     path="/token",
     status_code=status.HTTP_200_OK,
-    response_model=...,
+    response_model=TokensResponse,
     summary="Получить пару токенов",
 )
-async def get_token(request: TokenRequest): ...
+async def get_token(request: TokenRequest) -> TokensResponse: ...

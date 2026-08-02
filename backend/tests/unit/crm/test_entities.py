@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.vo import (
     ContactPerson,
     CounterpartyType,
@@ -46,8 +46,8 @@ def valid_contact_person():
 # ====================== Успешное создание ======================
 
 def test_create_legal_entity_success(valid_inn_legal, valid_kpp, valid_phone):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="ООО Ромашка",
         legal_name="Общество с ограниченной ответственностью «Ромашка»",
         inn=valid_inn_legal,
@@ -56,14 +56,14 @@ def test_create_legal_entity_success(valid_inn_legal, valid_kpp, valid_phone):
         email="info@romashka.ru",
     )
 
-    assert counterparty.counterparty_type == CounterpartyType.LEGAL_ENTITY
+    assert counterparty.type_ == CounterpartyType.LEGAL_ENTITY
     assert counterparty.is_head is True
     assert counterparty.is_branch is False
 
 
 def test_create_individual_entrepreneur_success(valid_inn_ip, valid_phone):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
+    counterparty = Organization(
+        type_=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
         name="Иванов Иван Иванович",
         legal_name="ИП Иванов И.И.",
         inn=valid_inn_ip,
@@ -73,7 +73,7 @@ def test_create_individual_entrepreneur_success(valid_inn_ip, valid_phone):
         okpo=None,
     )
 
-    assert counterparty.counterparty_type == CounterpartyType.INDIVIDUAL_ENTREPRENEUR
+    assert counterparty.type_ == CounterpartyType.INDIVIDUAL_ENTREPRENEUR
     assert counterparty.is_head is True
     assert counterparty.is_branch is False
 
@@ -81,8 +81,8 @@ def test_create_individual_entrepreneur_success(valid_inn_ip, valid_phone):
 # ====================== Редактирование контрагента ======================
 
 def test_edit_counterparty_success(valid_inn_legal, valid_kpp, valid_phone):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="ООО Ромашка",
         legal_name="Общество с ограниченной ответственностью «Ромашка»",
         inn=valid_inn_legal,
@@ -110,8 +110,8 @@ def test_edit_counterparty_success(valid_inn_legal, valid_kpp, valid_phone):
 
 
 def test_edit_same_data_do_nothing(valid_inn_legal, valid_kpp, valid_phone):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="ООО Ромашка",
         legal_name="Общество с ограниченной ответственностью «Ромашка»",
         inn=valid_inn_legal,
@@ -132,8 +132,8 @@ def test_edit_same_data_do_nothing(valid_inn_legal, valid_kpp, valid_phone):
 # ====================== Создание филиала через фабричный метод ======================
 
 def test_create_branch(valid_inn_legal, valid_kpp, valid_phone):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="ООО Ромашка",
         legal_name="Общество с ограниченной ответственностью «Ромашка»",
         inn=valid_inn_legal,
@@ -151,7 +151,7 @@ def test_create_branch(valid_inn_legal, valid_kpp, valid_phone):
         address="г. Санкт-Петербург, Невский пр., 1",
     )
 
-    assert branch.counterparty_type == CounterpartyType.BRANCH
+    assert branch.type_ == CounterpartyType.BRANCH
     assert branch.parent_id == counterparty.id
     assert branch.inn == counterparty.inn
     assert branch.is_head is False
@@ -160,8 +160,8 @@ def test_create_branch(valid_inn_legal, valid_kpp, valid_phone):
 
 
 def test_create_branch_invalid_counterparty_type(valid_inn_ip, valid_phone):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
+    counterparty = Organization(
+        type_=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
         name="ИП Иванов",
         legal_name="ИП Иванов И.И.",
         inn=valid_inn_ip,
@@ -185,8 +185,8 @@ def test_create_branch_invalid_counterparty_type(valid_inn_ip, valid_phone):
 
 def test_legal_entity_without_kpp_raises_error(valid_inn_legal, valid_phone):
     with pytest.raises(InvariantViolationError, match="KPP required"):
-        Counterparty(
-            counterparty_type=CounterpartyType.LEGAL_ENTITY,
+        Organization(
+            type_=CounterpartyType.LEGAL_ENTITY,
             name="ООО Ромашка",
             legal_name="Общество с ограниченной ответственностью «Ромашка»",
             inn=valid_inn_legal,
@@ -198,8 +198,8 @@ def test_legal_entity_without_kpp_raises_error(valid_inn_legal, valid_phone):
 
 def test_ip_with_kpp_raises_error(valid_inn_ip, valid_kpp, valid_phone):
     with pytest.raises(InvariantViolationError, match="KPP not required"):
-        Counterparty(
-            counterparty_type=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
+        Organization(
+            type_=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
             name="ИП Иванов",
             legal_name="ИП Иванов И.И.",
             inn=valid_inn_ip,
@@ -211,8 +211,8 @@ def test_ip_with_kpp_raises_error(valid_inn_ip, valid_kpp, valid_phone):
 
 def test_wrong_inn_length_for_legal_entity(valid_inn_ip, valid_kpp, valid_phone):
     with pytest.raises(InvariantViolationError, match="10 digits"):
-        Counterparty(
-            counterparty_type=CounterpartyType.LEGAL_ENTITY,
+        Organization(
+            type_=CounterpartyType.LEGAL_ENTITY,
             name="ООО Ромашка",
             legal_name="Общество с ограниченной ответственностью «Ромашка»",
             inn=valid_inn_ip,
@@ -224,8 +224,8 @@ def test_wrong_inn_length_for_legal_entity(valid_inn_ip, valid_kpp, valid_phone)
 
 def test_wrong_inn_length_for_ip(valid_inn_legal, valid_phone):
     with pytest.raises(InvariantViolationError, match="12 digits"):
-        Counterparty(
-            counterparty_type=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
+        Organization(
+            type_=CounterpartyType.INDIVIDUAL_ENTREPRENEUR,
             name="ИП Иванов",
             legal_name="ИП Иванов И.И.",
             inn=valid_inn_legal,
@@ -236,8 +236,8 @@ def test_wrong_inn_length_for_ip(valid_inn_legal, valid_phone):
 
 def test_branch_without_parent_id_raises_error(valid_inn_legal, valid_kpp, valid_phone):
     with pytest.raises(InvariantViolationError, match="specify the ID of the head counterparty"):
-        Counterparty(
-            counterparty_type=CounterpartyType.BRANCH,
+        Organization(
+            type_=CounterpartyType.BRANCH,
             name="Филиал",
             legal_name="Филиал в СПб",
             inn=valid_inn_legal,
@@ -250,8 +250,8 @@ def test_branch_without_parent_id_raises_error(valid_inn_legal, valid_kpp, valid
 
 def test_non_unique_contact_data_raises_error(valid_inn_legal, valid_kpp, valid_phone):
     with pytest.raises(InvariantViolationError, match="phone number and email must be unique"):
-        Counterparty(
-            counterparty_type=CounterpartyType.LEGAL_ENTITY,
+        Organization(
+            type_=CounterpartyType.LEGAL_ENTITY,
             name="Филиал",
             legal_name="Филиал в СПб",
             inn=valid_inn_legal,
@@ -282,8 +282,8 @@ def test_non_unique_contact_data_raises_error(valid_inn_legal, valid_kpp, valid_
 # ====================== Свойства ======================
 
 def test_is_head_and_is_branch_properties():
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="Головная компания",
         legal_name="Головная компания",
         inn=Inn("7707083893"),
@@ -295,8 +295,8 @@ def test_is_head_and_is_branch_properties():
     assert counterparty.is_head is True
     assert counterparty.is_branch is False
 
-    branch = Counterparty(
-        counterparty_type=CounterpartyType.BRANCH,
+    branch = Organization(
+        type_=CounterpartyType.BRANCH,
         name="Филиал",
         legal_name="Филиал",
         inn=Inn("7707083893"),
@@ -313,8 +313,8 @@ def test_is_head_and_is_branch_properties():
 # ====================== Добавление контактного лица ======================
 
 def test_add_contact_person_success():
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="Головная компания",
         legal_name="Головная компания",
         inn=Inn("7707083893"),
@@ -337,8 +337,8 @@ def test_add_contact_person_success():
 
 
 def test_add_already_exists_contact_person_failed():
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="Головная компания",
         legal_name="Головная компания",
         inn=Inn("7707083893"),
@@ -369,8 +369,8 @@ def test_add_already_exists_contact_person_failed():
 # ====================== Удаление контактного лица ======================
 
 def test_remove_contact_person_success():
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="Головная компания",
         legal_name="Головная компания",
         inn=Inn("7707083893"),

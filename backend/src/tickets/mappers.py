@@ -1,4 +1,4 @@
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.schemas import CounterpartyReference
 from src.iam.domain.entities import User
 from src.iam.schemas import UserReference
@@ -37,7 +37,7 @@ def map_ticket_to_view_response(
         ticket: Ticket,
         reporter: User,
         assignee: User | None = None,
-        counterparty: Counterparty | None = None,
+        counterparty: Organization | None = None,
         project: Project | None = None,
 ) -> TicketViewResponse:
     assignee_ref = (

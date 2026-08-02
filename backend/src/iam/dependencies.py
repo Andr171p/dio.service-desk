@@ -23,7 +23,7 @@ from .infra.repos import SqlInvitationRepository, SqlUserRepository
 from .infra.token_store import RedisTokenStore
 from .mappers import map_invitation_to_response, map_user_to_response
 from .schemas import CurrentUser, InvitationResponse, UserResponse
-from .security import validate_token
+from .security import decode_token
 from .services import AuthService, InvitationService
 
 oauth2_scheme = OAuth2PasswordBearer(
@@ -93,7 +93,7 @@ async def get_current_subject(
         token: Annotated[str, Depends(oauth2_scheme)],
         blacklist: Annotated[TokenStore, Depends(get_token_store)],
 ) -> Subject:
-    payload = validate_token(token)
+    payload = decode_token(token)
     jti, sub, type_ = payload.get("jti"), payload.get("sub"), payload.get("sub_type")
 
     if jti is None or await blacklist.is_revoked(jti):

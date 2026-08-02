@@ -1,8 +1,8 @@
-from .domain.entities import Counterparty
+from .domain.entities import Organization
 from .schemas import ContactPersonOut, CounterpartyResponse
 
 
-def map_counterparty_to_response(counterparty: Counterparty) -> CounterpartyResponse:
+def map_counterparty_to_response(counterparty: Organization) -> CounterpartyResponse:
     """
     Преобразование доменной сущности контрагента к API схеме ответа
     """
@@ -11,7 +11,7 @@ def map_counterparty_to_response(counterparty: Counterparty) -> CounterpartyResp
         id=counterparty.id,
         created_at=counterparty.created_at,
         updated_at=counterparty.updated_at,
-        counterparty_type=counterparty.counterparty_type,
+        counterparty_type=counterparty.type_,
         name=counterparty.name,
         legal_name=counterparty.legal_name,
         inn=f"{counterparty.inn}",

@@ -67,7 +67,7 @@ def test_create_customer_without_counterparty_raises_error(valid_email, valid_pa
             password_hash=valid_password_hash,
             counterparty_id=None,
         )
-    assert "Counterparty must be specified" in str(exc.value)
+    assert "Organization must be specified" in str(exc.value)
 
 
 def test_create_support_minimal(valid_email, valid_password_hash):

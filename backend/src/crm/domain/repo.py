@@ -8,7 +8,7 @@ from src.products.domain.entities import SoftwareProduct
 from src.shared.domain.repos import Repository
 from src.shared.schemas import Page, Pagination
 
-from .entities import Counterparty
+from .entities import Organization
 from .vo import Inn
 
 
@@ -19,18 +19,18 @@ class CounterpartyFilters:
     inn: Inn | None = None
 
 
-class CounterpartyRepository(Repository[Counterparty]):
+class CounterpartyRepository(Repository[Organization]):
 
     @override
     async def paginate(
             self, pagination: Pagination, filters: CounterpartyFilters | None = None,
-    ) -> Page[Counterparty]: ...
+    ) -> Page[Organization]: ...
 
-    async def get_by_email(self, email: str) -> Counterparty | None: ...
+    async def get_by_email(self, email: str) -> Organization | None: ...
 
-    async def get_by_inn(self, inn: Inn) -> Counterparty | None: ...
+    async def get_by_inn(self, inn: Inn) -> Organization | None: ...
 
-    async def get_with_descendants(self, counterparty_id: UUID) -> list[Counterparty]:
+    async def get_with_descendants(self, counterparty_id: UUID) -> list[Organization]:
         """
         Нахождение контрагента и всех его суб-компании (филиалов, дочерних отделов).
         Принимает ID головного контрагента и возвращает плоский список.

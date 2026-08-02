@@ -11,11 +11,9 @@ import jwt
 from passlib.context import CryptContext
 
 from src.core.settings import settings
+from src.iam.domain.exceptions import UnauthorizedError
+from src.iam.domain.vo import Email
 from src.shared.utils.time import current_datetime
-
-from .domain.authz import SubjectType
-from .domain.exceptions import UnauthorizedError
-from .domain.vo import Email, UserRole
 
 MEMORY_COST = 100
 TIME_COST = 2
@@ -43,18 +41,14 @@ crypto_executor = ThreadPoolExecutor(max_workers=MAX_WORKERS, thread_name_prefix
 
 
 async def hash_password_async(password: str) -> str:
-    """
-    Асинхронное хэширует пароль в отдельном потоке.
-    """
+    """Асинхронное хэширует пароль в отдельном потоке."""
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(crypto_executor, hash_password, password)
 
 
 async def verify_password_async(plain_password: str, password_hash: str) -> bool:
-    """
-    Асинхронно сверяет хеш пароля в отдельном потоке.
-    """
+    """Асинхронно сверяет хеш пароля в отдельном потоке."""
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
@@ -70,44 +64,78 @@ def verify_password(plain_password: str, password_hash: str) -> bool:
     return pwd_context.verify(plain_password, password_hash)
 
 
+def create_authentication_token(user_id: UUID) -> str:
+    """Выпускает очень короткоживущий токен для аутентификации."""
+
+    now = current_datetime()
+    expires_at = now + timedelta(minutes=settings.jwt.authentication_token_expires_in_minutes)
+
+    payload = {
+        "sub": str(user_id),
+        "typ": "authentication",
+        "jti": str(uuid4()),
+        "exp": expires_at.timestamp(),
+        "iat": now.timestamp(),
+    }
+
+    return jwt.encode(payload=payload, key=settings.secret_key, algorithm=settings.jwt.algorithm)
+
+
 def create_access_token(
         user_id: UUID,
         email: Email,
-        user_roles: set[UserRole],
-        counterparty_id: UUID | None = None,
+        membership_id: UUID,
+        organization_id: UUID,
+        roles: set[str],
+        permissions: set[str],
 ) -> str:
+
     now = current_datetime()
     expires_at = now + timedelta(minutes=settings.jwt.access_token_expires_in_minutes)
+
     payload = {
-        "sub": f"{user_id}",
+        # Базовые поля
+        "sub": str(user_id),
         "exp": expires_at.timestamp(),
         "iat": now.timestamp(),
-        "type_": "access",
-        "jti": f"{uuid4()}",
-        "email": f"{email}",
-        "roles": list(user_roles),
-        "sub_type": SubjectType.USER.value,
+        "typ": "access",
+        "jti": str(uuid4()),
+
+        # Кастомные поля
+        "mid": str(membership_id),
+        "org_id": str(organization_id),
+        "email": str(email),
+        "roles": list(roles),
+        "perms": list(permissions),
     }
-    if counterparty_id is not None:
-        payload["organization_id"] = f"{counterparty_id}"
 
     return jwt.encode(payload=payload, key=settings.secret_key, algorithm=settings.jwt.algorithm)
 
 
-def create_refresh_token(user_id: UUID) -> str:
+def create_refresh_token(user_id: UUID, membership_id: UUID) -> str:
+    """Выпускает долгоживущий токен для получения новой пары access + refresh."""
+
     now = current_datetime()
     expires_at = now + timedelta(days=settings.jwt.refresh_token_expires_in_days)
+
     payload = {
-        "sub": f"{user_id}",
+        # Базовые поля
+        "sub": str(user_id),
         "exp": expires_at.timestamp(),
         "iat": now.timestamp(),
-        "type_": "refresh",
-        "jti": f"{uuid4()}",
+        "typ": "refresh",
+        "jti": str(uuid4()),
+
+        # Кастомные поля
+        "mid": str(membership_id),
     }
+
     return jwt.encode(payload=payload, key=settings.secret_key, algorithm=settings.jwt.algorithm)
 
 
-def validate_token(token: str) -> dict[str, Any]:
+def decode_token(token: str) -> dict[str, Any]:
+    """Декодирует JWT и проверяет его подпись и срок действия."""
+
     try:
         return jwt.decode(
             token,

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shared.domain.exceptions import AlreadyExistsError, NotFoundError
 
-from .domain.entities import Counterparty
+from .domain.entities import Organization
 from .domain.repo import CounterpartyRepository
 from .domain.vo import ContactPerson, Inn, Kpp, Okpo, Phone
 from .mappers import map_counterparty_to_response
@@ -53,8 +53,8 @@ class CounterpartyService:
         ]
 
         # 4. Создание доменной сущности
-        counterparty = Counterparty(
-            counterparty_type=data.counterparty_type,
+        counterparty = Organization(
+            type_=data.counterparty_type,
             name=data.name,
             legal_name=data.legal_name,
             inn=inn,

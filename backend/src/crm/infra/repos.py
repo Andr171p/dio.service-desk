@@ -12,21 +12,21 @@ from src.products.infra.repo import SoftwareProductMapper
 from src.shared.infra.repos import ModelMapper, SqlAlchemyRepository
 from src.shared.schemas import Page, Pagination
 
-from ..domain.entities import Counterparty
+from ..domain.entities import Organization
 from ..domain.repo import CounterpartyFilters
 from ..domain.vo import ContactPerson, Inn, Kpp, Okpo, Phone
 from .models import CounterpartyOrm, CounterpartyProductOrm
 
 
-class CounterpartyMapper(ModelMapper[Counterparty, CounterpartyOrm]):
+class CounterpartyMapper(ModelMapper[Organization, CounterpartyOrm]):
 
     @staticmethod
-    def to_entity(model: CounterpartyOrm) -> Counterparty:
-        return Counterparty(
+    def to_entity(model: CounterpartyOrm) -> Organization:
+        return Organization(
             id=model.id,
             created_at=model.created_at,
             updated_at=model.updated_at,
-            counterparty_type=model.counterparty_type,
+            type_=model.counterparty_type,
             name=model.name,
             legal_name=model.legal_name,
             inn=Inn(model.inn),
@@ -50,12 +50,12 @@ class CounterpartyMapper(ModelMapper[Counterparty, CounterpartyOrm]):
         )
 
     @staticmethod
-    def from_entity(entity: Counterparty) -> CounterpartyOrm:
+    def from_entity(entity: Organization) -> CounterpartyOrm:
         return CounterpartyOrm(
             id=entity.id,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
-            counterparty_type=entity.counterparty_type,
+            counterparty_type=entity.type_,
             name=entity.name,
             legal_name=entity.legal_name,
             inn=entity.inn.value,
@@ -79,7 +79,7 @@ class CounterpartyMapper(ModelMapper[Counterparty, CounterpartyOrm]):
         )
 
 
-class SqlCounterpartyRepository(SqlAlchemyRepository[Counterparty, CounterpartyOrm]):
+class SqlCounterpartyRepository(SqlAlchemyRepository[Organization, CounterpartyOrm]):
     model = CounterpartyOrm
     model_mapper = CounterpartyMapper
 
@@ -113,7 +113,7 @@ class SqlCounterpartyRepository(SqlAlchemyRepository[Counterparty, CounterpartyO
     @override
     async def paginate(
             self, pagination: Pagination, filters: CounterpartyFilters | None = None,
-    ) -> Page[Counterparty]:
+    ) -> Page[Organization]:
         stmt = select(self.model)
 
         if filters:
@@ -121,7 +121,7 @@ class SqlCounterpartyRepository(SqlAlchemyRepository[Counterparty, CounterpartyO
 
         return await self._paginate(stmt, pagination)
 
-    async def get_by_email(self, email: str) -> Counterparty | None:
+    async def get_by_email(self, email: str) -> Organization | None:
         stmt = (
             select(self.model)
             .where(
@@ -133,7 +133,7 @@ class SqlCounterpartyRepository(SqlAlchemyRepository[Counterparty, CounterpartyO
         model = result.scalar_one_or_none()
         return None if model is None else self.model_mapper.to_entity(model)
 
-    async def get_by_inn(self, inn: Inn) -> Counterparty | None:
+    async def get_by_inn(self, inn: Inn) -> Organization | None:
         stmt = (
             select(self.model)
             .where(
@@ -145,7 +145,7 @@ class SqlCounterpartyRepository(SqlAlchemyRepository[Counterparty, CounterpartyO
         model = result.scalar_one_or_none()
         return None if model is None else self.model_mapper.to_entity(model)
 
-    async def get_with_descendants(self, counterparty_id: UUID) -> list[Counterparty]:
+    async def get_with_descendants(self, counterparty_id: UUID) -> list[Organization]:
         # 1. Запрос для выбора корневого элемента
         recursive_cte = (
             select(self.model)

@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from uuid import UUID
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.iam.domain.entities import User
 from src.projects.domain.entities import Project
 
@@ -13,7 +13,7 @@ class References:
     """Внешние отношения заявок к другим модулям."""
 
     users: dict[UUID, User] = field(default_factory=dict)
-    counterparties: dict[UUID, Counterparty] = field(default_factory=dict)
+    counterparties: dict[UUID, Organization] = field(default_factory=dict)
     projects: dict[UUID, Project] = field(default_factory=dict)
 
 
@@ -21,7 +21,7 @@ class ReferenceLoader:
     def __init__(
             self,
             users_loader: Callable[[list[UUID]], Awaitable[list[User]]],
-            counterparties_loader: Callable[[list[UUID]], Awaitable[list[Counterparty]]],
+            counterparties_loader: Callable[[list[UUID]], Awaitable[list[Organization]]],
             projects_loader: Callable[[list[UUID]], Awaitable[list[Project]]],
     ) -> None:
         self._users_loader = users_loader

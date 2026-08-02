@@ -5,7 +5,7 @@ import pytest
 from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.repo import CounterpartyRepository
 from src.crm.domain.vo import CounterpartyType, Inn, Kpp, Phone
 from src.iam.domain.entities import User
@@ -135,7 +135,7 @@ def mock_session():
 def counterparty_factory(fake_counterparty_repo):
 
     async def _make_counterparty(**overrides):
-        counterparty_type = overrides.pop("counterparty_type", CounterpartyType.LEGAL_ENTITY)
+        counterparty_type = overrides.pop("type_", CounterpartyType.LEGAL_ENTITY)
         inn = overrides.pop("inn", None)
         kpp = overrides.pop("kpp", None)
 
@@ -153,9 +153,9 @@ def counterparty_factory(fake_counterparty_repo):
         else:
             kpp = None
 
-        counterparty = Counterparty(
+        counterparty = Organization(
             id=overrides.pop("id", uuid4()),
-            counterparty_type=counterparty_type,
+            type_=counterparty_type,
             name=overrides.pop("name", "Тестовый контрагент"),
             legal_name=overrides.pop("legal_name", "ООО «Тест»"),
             inn=inn,

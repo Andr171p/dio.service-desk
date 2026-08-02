@@ -9,7 +9,7 @@ from src.shared.dependencies import PaginationDep, SessionDep
 from src.shared.domain.repos import get_or_raise_404
 from src.shared.schemas import Page
 
-from .domain.entities import Counterparty
+from .domain.entities import Organization
 from .domain.repo import CounterpartyFilters, CounterpartyRepository
 from .domain.vo import Inn
 from .infra.repos import SqlCounterpartyRepository
@@ -52,7 +52,7 @@ CounterpartyFiltersDep = Annotated[CounterpartyFilters, Depends(get_counterparty
 async def get_counterparty_or_404(
         counterparty_id: UUID, counterparty_repo: CounterpartyRepoDep
 ) -> CounterpartyResponse:
-    counterparty = await get_or_raise_404(counterparty_repo.read, counterparty_id, Counterparty)
+    counterparty = await get_or_raise_404(counterparty_repo.read, counterparty_id, Organization)
     return map_counterparty_to_response(counterparty)
 
 

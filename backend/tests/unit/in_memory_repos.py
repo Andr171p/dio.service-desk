@@ -3,7 +3,7 @@ from typing import override
 import math
 from uuid import UUID
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.vo import Inn
 from src.iam.domain.entities import Invitation, User
 from src.iam.domain.vo import UserRole
@@ -23,20 +23,20 @@ from src.tickets.domain.services import TicketScopes
 from src.tickets.domain.vo import CommentType, ReactionType
 
 
-class InMemoryCounterpartyRepository(InMemoryRepository[Counterparty]):
-    async def get_by_email(self, email: str) -> Counterparty | None:
+class InMemoryCounterpartyRepository(InMemoryRepository[Organization]):
+    async def get_by_email(self, email: str) -> Organization | None:
         for entity in self.data.values():
             if entity.email == email:
                 return entity
         return None
 
-    async def get_by_inn(self, inn: Inn) -> Counterparty | None:
+    async def get_by_inn(self, inn: Inn) -> Organization | None:
         for entity in self.data.values():
             if entity.inn == inn:
                 return entity
         return None
 
-    async def get_with_descendants(self, counterparty_id: UUID) -> list[Counterparty]:
+    async def get_with_descendants(self, counterparty_id: UUID) -> list[Organization]:
         return [entity for entity in self.data.values() if entity.parent_id == counterparty_id]
 
 

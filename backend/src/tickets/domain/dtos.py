@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.projects.domain.entities import Project
 from src.shared.domain.dtos import TimeRangeFilters
 from src.shared.domain.vo import Priority, Tag
@@ -24,7 +24,7 @@ class TicketDraft:
     tags: list[Tag] | None = None
 
     project: Project | None = None
-    counterparty: Counterparty | None = None
+    counterparty: Organization | None = None
     product_id: UUID | None = None
 
 

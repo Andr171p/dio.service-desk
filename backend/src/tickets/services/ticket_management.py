@@ -4,7 +4,7 @@ from functools import partial
 from uuid import UUID
 
 from src.activity.recorder import ActivityRecorder
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.repo import CounterpartyRepository
 from src.iam.domain.authz import PermissionResult, Subject
 from src.iam.domain.entities import User
@@ -28,7 +28,7 @@ from ..schemas import TicketCreate, TicketResponse, TicketUpdate
 @dataclass(frozen=True, slots=True)
 class _TicketCreationContext:
     project: Project | None = None
-    counterparty: Counterparty | None = None
+    counterparty: Organization | None = None
 
     @property
     def project_id(self) -> UUID | None:
@@ -85,14 +85,14 @@ class TicketService:
             counterparty = None
             if project.counterparty_id:
                 counterparty = await get_or_raise_404(
-                    self.counterparty_repo.read, project.counterparty_id, Counterparty,
+                    self.counterparty_repo.read, project.counterparty_id, Organization,
                 )
 
             return _TicketCreationContext(project=project, counterparty=counterparty)
 
         if data.counterparty_id:
             counterparty = await get_or_raise_404(
-                self.counterparty_repo.read, data.counterparty_id, Counterparty,
+                self.counterparty_repo.read, data.counterparty_id, Organization,
             )
             return _TicketCreationContext(counterparty=counterparty)
 

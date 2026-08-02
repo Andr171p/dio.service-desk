@@ -7,7 +7,7 @@ from fastapi import Depends, Query
 from src.activity.dependencies import ActivityRecorderDep
 from src.core.database import session_factory
 from src.crm.dependencies import CounterpartyRepoDep
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.infra.repos import SqlCounterpartyRepository
 from src.iam.dependencies import UserRepoDep
 from src.iam.domain.entities import User
@@ -79,7 +79,7 @@ async def load_users(user_ids: list[UUID]) -> list[User]:
         return await user_repo.get_by_ids(user_ids)
 
 
-async def load_counterparties(counterparty_ids: list[UUID]) -> list[Counterparty]:
+async def load_counterparties(counterparty_ids: list[UUID]) -> list[Organization]:
     async with session_factory() as session:
         counterparty_repo = SqlCounterpartyRepository(session)
         return await counterparty_repo.get_by_ids(counterparty_ids)

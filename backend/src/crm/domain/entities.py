@@ -5,23 +5,25 @@ from uuid import UUID
 
 from pydantic import EmailStr
 
-from src.shared.domain.entities import Entity
+from src.shared.domain.entities import AggregateRoot
 from src.shared.domain.exceptions import InvariantViolationError
 from src.shared.utils.time import current_datetime
 
-from .vo import ContactPerson, CounterpartyType, Inn, Kpp, Okpo, Phone
+from .vo import ContactPerson, CounterpartyType, Inn, Kpp, Okpo, OrganizationKind, Phone
 
 INDIVIDUAL_INN_LENGTH = 12
 LEGAL_INN_LENGTH = 10
 
 
 @dataclass(kw_only=True)
-class Counterparty(Entity):
+class Organization(AggregateRoot):
     """
     Контрагент - компания с которой ведётся работа (заказчик).
     """
 
-    counterparty_type: CounterpartyType
+    type_: CounterpartyType
+    kind: OrganizationKind
+
     name: str
     legal_name: str
     inn: Inn
@@ -41,7 +43,7 @@ class Counterparty(Entity):
 
         # 1. Проверка корректности длины ИНН в зависимости от типа контрагента
         inn_length = len(self.inn.value)
-        match self.counterparty_type:
+        match self.type_:
             case CounterpartyType.INDIVIDUAL | CounterpartyType.INDIVIDUAL_ENTREPRENEUR:
                 if inn_length != INDIVIDUAL_INN_LENGTH:
                     raise InvariantViolationError(
@@ -56,18 +58,18 @@ class Counterparty(Entity):
                     )
 
         # 3. Проверка наличия КПП
-        if self.counterparty_type in {CounterpartyType.LEGAL_ENTITY, CounterpartyType.BRANCH}:
+        if self.type_ in {CounterpartyType.LEGAL_ENTITY, CounterpartyType.BRANCH}:
             if self.kpp is None:
                 raise InvariantViolationError(
-                    f"For counterparty type '{self.counterparty_type.value}' KPP required"
+                    f"For counterparty type '{self.type_.value}' KPP required"
                 )
         elif self.kpp is not None:
             raise InvariantViolationError(
-                f"For counterparty type {self.counterparty_type.value} KPP not required"
+                f"For counterparty type {self.type_.value} KPP not required"
             )
 
         # 4. Обособленное подразделение должно быть привязано к основному контрагенту
-        if self.counterparty_type == CounterpartyType.BRANCH and self.parent_id is None:
+        if self.type_ == CounterpartyType.BRANCH and self.parent_id is None:
             raise InvariantViolationError(
                 "It is necessary to specify the ID of the head counterparty "
                 "to attach a branch. Missing parent_id string."
@@ -149,16 +151,16 @@ class Counterparty(Entity):
             email: EmailStr,
             okpo: str | None = None,
             address: str | None = None,
-    ) -> "Counterparty":
+    ) -> "Organization":
         """Создание обособленного подразделения с привязкой к контрагенту"""
 
-        if self.counterparty_type != CounterpartyType.LEGAL_ENTITY:
+        if self.type_ != CounterpartyType.LEGAL_ENTITY:
             raise InvariantViolationError(
                 "It is impossible to assign a branch to a non-legal workflow"
             )
 
-        return Counterparty(
-            counterparty_type=CounterpartyType.BRANCH,
+        return Organization(
+            type_=CounterpartyType.BRANCH,
             name=name,
             legal_name=legal_name,
             inn=self.inn,

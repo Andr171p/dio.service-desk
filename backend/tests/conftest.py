@@ -7,7 +7,7 @@ from httpx import ASGITransport, AsyncClient
 import src.crm.infra.models
 import src.iam.infra.models
 from src.crm.dependencies import get_counterparty_repo, get_counterparty_service
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.repo import CounterpartyRepository
 from src.crm.domain.vo import Inn
 from src.crm.services import CounterpartyService
@@ -23,20 +23,20 @@ def pytest_configure(config):
 # ====================== In memory реализация репозитория с контрагентами ======================
 
 
-class InMemoryCounterpartyRepository(InMemoryRepository[Counterparty]):
-    async def get_by_email(self, email: str) -> Counterparty | None:
+class InMemoryCounterpartyRepository(InMemoryRepository[Organization]):
+    async def get_by_email(self, email: str) -> Organization | None:
         for entity in self.data.values():
             if entity.email == email:
                 return entity
         return None
 
-    async def get_by_inn(self, inn: Inn) -> Counterparty | None:
+    async def get_by_inn(self, inn: Inn) -> Organization | None:
         for entity in self.data.values():
             if entity.inn == inn:
                 return entity
         return None
 
-    async def get_with_descendants(self, counterparty_id: UUID) -> list[Counterparty]:
+    async def get_with_descendants(self, counterparty_id: UUID) -> list[Organization]:
         return [entity for entity in self.data.values() if entity.parent_id == counterparty_id]
 
 

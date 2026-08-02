@@ -12,7 +12,7 @@ from src.iam.security import (
     create_access_token,
     create_refresh_token,
     hash_password,
-    validate_token,
+    decode_token,
     verify_password,
 )
 from src.shared.utils.time import current_datetime, get_expiration_timestamp
@@ -48,7 +48,7 @@ class TestValidateToken:
         with freeze_time("2026-03-26 10:00:00"):
             access_token = create_access_token(user_id=user_id, email=email, user_role=user_role)
 
-            payload = validate_token(access_token)
+            payload = decode_token(access_token)
 
             assert payload["sub"] == str(user_id)
             assert payload["email"] == email
@@ -68,10 +68,10 @@ class TestValidateToken:
 
         with freeze_time("2026-03-26 10:00:00"):
             access_token = create_access_token(
-                user_id=user_id, email=email, user_role=user_role, counterparty_id=counterparty_id
+                user_id=user_id, email=email, user_role=user_role, organization_id=counterparty_id
             )
 
-            payload = validate_token(access_token)
+            payload = decode_token(access_token)
 
             assert payload["sub"] == str(user_id)
             assert payload["email"] == email
@@ -85,7 +85,7 @@ class TestValidateToken:
         with freeze_time("2026-03-26 10:00:00"):
             refresh_token = create_refresh_token(user_id=user_id)
 
-            payload = validate_token(refresh_token)
+            payload = decode_token(refresh_token)
 
             assert payload["sub"] == str(user_id)
             assert payload["type_"] == "refresh"
@@ -108,7 +108,7 @@ class TestValidateToken:
         # перемотка времени на час (токен уже истёк)
         with freeze_time("2026-03-26 11:00:00"):  # +1 час
             with pytest.raises(UnauthorizedError) as exc_info:
-                validate_token(access_token)
+                decode_token(access_token)
 
             assert "Token signature expired" in str(exc_info.value)
 
@@ -120,7 +120,7 @@ class TestValidateToken:
         )
 
         with pytest.raises(UnauthorizedError) as exc_info:
-            validate_token(invalid_token)
+            decode_token(invalid_token)
 
         assert "Invalid token" in str(exc_info.value)
 
@@ -134,7 +134,7 @@ class TestValidateToken:
 
         for token in malformed_tokens:
             with pytest.raises(UnauthorizedError):
-                validate_token(token)
+                decode_token(token)
 
 
 class TestCreateAccessToken:
@@ -150,7 +150,7 @@ class TestCreateAccessToken:
             )
 
             access_token = create_access_token(user_id=user_id, email=email, user_role=user_role)
-            payload = validate_token(access_token)
+            payload = decode_token(access_token)
 
             assert payload["sub"] == f"{user_id}"
             assert payload["email"] == email
@@ -174,9 +174,9 @@ class TestCreateAccessToken:
             )
 
             access_token = create_access_token(
-                user_id=user_id, email=email, user_role=user_role, counterparty_id=counterparty_id
+                user_id=user_id, email=email, user_role=user_role, organization_id=counterparty_id
             )
-            payload = validate_token(access_token)
+            payload = decode_token(access_token)
 
             assert payload["sub"] == f"{user_id}"
             assert payload["email"] == email
@@ -200,7 +200,7 @@ class TestCreateRefreshToken:
             )
 
             refresh_token = create_refresh_token(user_id=user_id)
-            payload = validate_token(refresh_token)
+            payload = decode_token(refresh_token)
 
             assert payload["sub"] == f"{user_id}"
             assert payload["type_"] == "refresh"

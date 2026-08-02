@@ -18,7 +18,7 @@ from src.iam.domain.services import (
 )
 from src.iam.domain.vo import UserRole
 from src.iam.schemas import Tokens, UserCreate
-from src.iam.security import hash_password, validate_token
+from src.iam.security import hash_password, decode_token
 from src.iam.services import AuthService, InvitationService, create_tokens_for_user
 from src.shared.domain.exceptions import AlreadyExistsError, NotFoundError
 from src.shared.utils.time import current_datetime
@@ -145,8 +145,8 @@ class TestCreateTokensForUser:
         assert isinstance(tokens, Tokens)
 
         # 2. Валидация токенов для проверки claims
-        access_payload = validate_token(tokens.access_token)
-        refresh_payload = validate_token(tokens.refresh_token)
+        access_payload = decode_token(tokens.access_token)
+        refresh_payload = decode_token(tokens.refresh_token)
 
         # 3. Проверка access токена
         assert access_payload["sub"] == f"{user.id}"

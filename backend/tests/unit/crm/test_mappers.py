@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.vo import ContactPerson, CounterpartyType, Inn, Kpp, Okpo, Phone
 from src.crm.infra.models import CounterpartyOrm
 from src.crm.infra.repos import CounterpartyMapper
@@ -48,11 +48,11 @@ def sample_counterparty_model(sample_uuid, sample_datetime):
 
 @pytest.fixture
 def sample_counterparty_entity(sample_uuid, sample_datetime):
-    return Counterparty(
+    return Organization(
         id=sample_uuid,
         created_at=sample_datetime,
         updated_at=sample_datetime,
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="ООО Ромашка",
         legal_name="Общество с ограниченной ответственностью «Ромашка»",
         inn=Inn("7707083893"),
@@ -80,7 +80,7 @@ def test_to_entity_full_mapping(sample_counterparty_model):
     assert entity.id == sample_counterparty_model.id
     assert entity.created_at == sample_counterparty_model.created_at
     assert entity.updated_at == sample_counterparty_model.updated_at
-    assert entity.counterparty_type == sample_counterparty_model.counterparty_type
+    assert entity.type_ == sample_counterparty_model.counterparty_type
     assert entity.name == sample_counterparty_model.name
     assert entity.legal_name == sample_counterparty_model.legal_name
     assert entity.inn.value == sample_counterparty_model.inn
@@ -141,7 +141,7 @@ def test_from_entity_full_mapping(sample_counterparty_entity):
     assert model.id == sample_counterparty_entity.id
     assert model.created_at == sample_counterparty_entity.created_at
     assert model.updated_at == sample_counterparty_entity.updated_at
-    assert model.counterparty_type == sample_counterparty_entity.counterparty_type
+    assert model.counterparty_type == sample_counterparty_entity.type_
     assert model.name == sample_counterparty_entity.name
     assert model.legal_name == sample_counterparty_entity.legal_name
     assert model.inn == sample_counterparty_entity.inn.value
@@ -167,11 +167,11 @@ def test_from_entity_full_mapping(sample_counterparty_entity):
 
 def test_from_entity_null_contact_person(sample_uuid, sample_datetime):
 
-    entity = Counterparty(
+    entity = Organization(
         id=sample_uuid,
         created_at=sample_datetime,
         updated_at=sample_datetime,
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="ООО Ромашка",
         legal_name="Общество с ограниченной ответственностью «Ромашка»",
         inn=Inn("7707083893"),

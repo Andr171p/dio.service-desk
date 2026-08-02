@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import pytest
 
-from src.crm.domain.entities import Counterparty
+from src.crm.domain.entities import Organization
 from src.crm.domain.vo import CounterpartyType, Inn, Kpp, Phone
 from src.iam.domain.exceptions import PermissionDeniedError
 from src.iam.domain.services import create_customer, create_support
@@ -54,8 +54,8 @@ def counterparty_id():
 
 @pytest.fixture
 async def created_counterparty(fake_counterparty_repo):
-    counterparty = Counterparty(
-        counterparty_type=CounterpartyType.LEGAL_ENTITY,
+    counterparty = Organization(
+        type_=CounterpartyType.LEGAL_ENTITY,
         name="Тест",
         legal_name="ООО Тест",
         inn=Inn("7707083893"),
