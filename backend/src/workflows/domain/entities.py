@@ -17,6 +17,16 @@ from .types import StatusId, TransitionId
 from .vo import RuleKind, StatusCategory, StatusKind
 
 
+def _generate_rule_id(type_: str, kind: RuleKind, config: Mapping[str, Any]) -> UUID:
+    payload = {
+        "type_": type_,
+        "kind": kind.value,
+        "config": config,
+    }
+    name = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return uuid5(NAMESPACE_OID, name)
+
+
 @dataclass(frozen=True, slots=True)
 class Rule:
     """Конфигурация одного правила Workflow."""
@@ -32,13 +42,7 @@ class Rule:
         Вычисляется на основе: type + kind + config -> одинаковый UUID.
         """
 
-        payload = {
-            "type_": self.type_,
-            "kind": self.kind,
-            "config": self.config,
-        }
-        name = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
-        return uuid5(NAMESPACE_OID, name)
+        return _generate_rule_id(self.type_, self.kind, self.config)
 
     def replace(
             self, *, config: Mapping[str, Any] | None = None, order: int | None = None,
