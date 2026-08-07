@@ -4,7 +4,7 @@ from pydantic import SecretStr
 
 from src.iam.domain.entities import Invitation, User
 from src.iam.domain.vo import FullName, Username, UserRole
-from src.iam.infra.models import InvitationOrm, UserOrm
+from src.iam.infra.database.models import InvitationOrm, UserOrm
 from src.iam.infra.repos import InvitationMapper, UserMapper
 from src.shared.utils.time import current_datetime
 

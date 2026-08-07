@@ -4,8 +4,6 @@ from uuid import UUID, uuid4
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-import src.crm.infra.models
-import src.iam.infra.models
 from src.crm.dependencies import get_counterparty_repo, get_counterparty_service
 from src.crm.domain.entities import Organization
 from src.crm.domain.repo import CounterpartyRepository

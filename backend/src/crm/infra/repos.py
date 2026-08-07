@@ -167,7 +167,7 @@ class SqlCounterpartyRepository(SqlAlchemyRepository[Organization, CounterpartyO
         return [self.model_mapper.to_entity(model) for model in models]
 
     async def get_customers(self, counterparty_id: UUID, params: Pagination) -> Page[User]:
-        from ...iam.infra.models import UserOrm
+        from src.iam.infra.database.models import UserOrm
         from ...iam.infra.repos import UserMapper
 
         # 1. Основной запрос

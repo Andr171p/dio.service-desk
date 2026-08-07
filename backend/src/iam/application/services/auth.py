@@ -1,8 +1,19 @@
-from datetime import timedelta
+from typing import Literal
+
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from src.core.settings import settings
 from src.crm.application.repos import OrganizationRepository
+from src.iam.application.builders import build_login_response
+from src.iam.application.dtos import (
+    LoginResponse,
+    LogoutRequest,
+    TokenRequest,
+    TokensResponse,
+    UserCredentials,
+)
+from src.iam.application.repos import MembershipRepository, RoleRepository, UserRepository
 from src.iam.domain.entities import Membership, Role, User
 from src.iam.domain.exceptions import UnauthorizedError
 from src.iam.domain.vo import Email
@@ -13,29 +24,38 @@ from src.iam.security import (
     decode_token,
     verify_password_async,
 )
-from src.shared.utils.time import get_expiration_timestamp
+from src.shared.infra.cache import Cache
+from src.shared.utils.time import from_timestamp, get_expiration_timestamp
 
-from .builders import build_login_response
-from .dtos import LoginResponse, TokenRequest, TokensResponse, UserCredentials
-from .repos import MembershipRepository, RoleRepository, UserRepository
+from .blacklist import is_revoked, revoke_token
 
 
-def _verify_authentication_token(token: str) -> UUID:
-    """Поверяет токен аутентификации, возвращает идентификатор пользователя."""
+def _verify_token(
+    token: str,
+    expected_type: Literal["authentication", "access", "refresh"],
+) -> tuple[UUID, UUID | None, UUID, datetime]:
+    """Проверяет токен, возвращает user_id, membership_id, jti, expires_at."""
 
     payload = decode_token(token)
 
-    if payload.get("typ") != "authentication":
-        raise UnauthorizedError("Invalid token type.")
+    if payload.get("typ") != expected_type:
+        raise UnauthorizedError(f"Invalid token type. Expected - '{expected_type}'.")
 
-    user_id = payload.get("sub")
-    if user_id is None:
-        raise UnauthorizedError("Missing required 'sub' claim in token payload.")
+    claims = ("sub", "mid", "jti", "exp")
 
-    return user_id
+    sub, mid, jti, exp = (payload.get(claim) for claim in claims)
+
+    try:
+        sub_uuid, mid_uuid, jti_uuid, exp_dt = (
+            UUID(sub), UUID(mid) if mid else None, UUID(jti), from_timestamp(exp)
+        )
+    except (ValueError, TypeError):
+        raise UnauthorizedError("Invalid claim format") from None
+
+    return sub_uuid, mid_uuid, jti_uuid, exp_dt
 
 
-def _create_tokens_for_user(
+def create_tokens_for_user(
         user: User, membership: Membership, roles: set[Role],
 ) -> TokensResponse:
     """Выпуск пары токенов для пользователя."""
@@ -70,11 +90,13 @@ class AuthService:
             membership_repo: MembershipRepository,
             role_repo: RoleRepository,
             organization_repo: OrganizationRepository,
+            cache: Cache[bool],
     ) -> None:
         self._user_repo = user_repo
         self._membership_repo = membership_repo
         self._role_repo = role_repo
         self._organization_repo = organization_repo
+        self._cache = cache
 
     async def login(self, credentials: UserCredentials) -> LoginResponse:
         """Поверяет учётную запись и выдаёт токен для аутентификации."""
@@ -108,7 +130,9 @@ class AuthService:
     async def authenticate(self, request: TokenRequest) -> TokensResponse:
         """Получение пары токенов в выбранной организации."""
 
-        user_id = _verify_authentication_token(request.authentication_token)
+        user_id, _, _, _ = _verify_token(
+            request.authentication_token, expected_type="authentication",
+        )
 
         if (user := await self._user_repo.read(user_id)) is None:
             raise UnauthorizedError(f"User - '{user_id}' not found.")
@@ -121,15 +145,44 @@ class AuthService:
 
         roles = await self._role_repo.get_by_ids(list(membership.roles))
 
-        return _create_tokens_for_user(user=user, membership=membership, roles=roles)
+        return create_tokens_for_user(user=user, membership=membership, roles=roles)
 
-    async def refresh_tokens(self) -> ...: ...
+    async def refresh_tokens(self, refresh_token: str) -> TokensResponse:
+        """Получить новую пару access + refresh."""
 
-    async def logout(self) -> ...: ...
+        user_id, membership_id, jti, expires_at = _verify_token(
+            refresh_token, expected_type="refresh",
+        )
 
+        if await is_revoked(jti, self._cache):
+            raise UnauthorizedError("Refresh token revoked.")
 
-class RegistrationService:
-    def __init__(self) -> None:
-        ...
+        if (user := await self._user_repo.read(user_id)) is None or not user.is_active:
+            raise UnauthorizedError(f"User - '{user_id}' inactive.")
 
-    async def register(self) -> ...: ...
+        if (membership := await self._membership_repo.read(membership_id)) is None \
+                or not membership.is_active:
+            raise UnauthorizedError(f"Membership - '{membership_id}' inactive.")
+
+        roles = await self._role_repo.get_by_ids(list(membership.roles))
+
+        await revoke_token(jti, expires_at, self._cache)
+
+        return create_tokens_for_user(user=user, membership=membership, roles=roles)
+
+    async def logout(self, request: LogoutRequest) -> None:
+        """
+        Выход их аккаунта, отзывает пару токенов (помещает в чёрный список).
+        Идемпотентный метод.
+        """
+
+        pairs: tuple[tuple[Literal["access", "refresh"], str]] = (
+            ("access", request.access_token), ("refresh", request.refresh_token),
+        )
+        for expected_type, token in pairs:
+            try:
+                _, _, jti, expires_at = _verify_token(token, expected_type)
+            except UnauthorizedError:
+                continue
+
+            await revoke_token(jti, expires_at, self._cache)

@@ -59,7 +59,7 @@ class Cache[T](Protocol):
 
     async def get(self, key: str) -> T | None: ...
 
-    async def set(self, key: str, value: T) -> None: ...
+    async def set(self, key: str, value: T, ttl: int | None = None) -> None: ...
 
     async def delete(self, key: str) -> None: ...
 
@@ -86,9 +86,12 @@ class RedisCache[T](Cache[T]):
 
         return self.serializer.loads(raw)
 
-    async def set(self, key: str, value: T) -> None:
+    async def set(self, key: str, value: T, ttl: int | None = None) -> None:
         raw = self.serializer.dumps(value)
-        await self.redis.set(key, raw, ex=self.ttl)
+
+        effective_ttl = ttl if ttl is not None else self.ttl
+
+        await self.redis.set(key, raw, ex=effective_ttl)
 
     async def delete(self, key: str) -> None:
         await self.redis.delete(key)
@@ -118,11 +121,12 @@ class InMemoryCache[T](Cache[T]):
 
         return value
 
-    async def set(self, key: str, value: T) -> None:
+    async def set(self, key: str, value: T, ttl: int | None = None) -> None:
         expires = None
 
-        if self.ttl:
-            expires = time.monotonic() + self.ttl
+        effective_ttl = ttl if ttl is not None else self.ttl
+        if effective_ttl is not None:
+            expires = time.monotonic() + effective_ttl
 
         self.storage[key] = (value, expires)
 
@@ -183,13 +187,13 @@ class MultiLevelCache[T](Cache[T]):
 
         return None
 
-    async def set(self, key: str, value: T) -> None:
+    async def set(self, key: str, value: T, ttl: int | None = None) -> None:
         """Параллельно пишет кеш в два слоя L1 и L2."""
 
         try:
             async with asyncio.TaskGroup() as tg:
-                tg.create_task(self.l1_cache.set(key, value))
-                tg.create_task(self.l2_cache.set(key, value))
+                tg.create_task(self.l1_cache.set(key, value, ttl))
+                tg.create_task(self.l2_cache.set(key, value, ttl))
         except ExceptionGroup as eg:
             for _ in eg.exceptions:
                 logger.exception(

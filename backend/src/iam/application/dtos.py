@@ -1,9 +1,39 @@
+from dataclasses import dataclass, field
 from datetime import datetime
+from enum import IntEnum, auto
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, PositiveInt
 
 from src.crm.application.dtos import OrganizationRef
+from src.iam.domain.vo import Email
+
+
+class IdentityType(IntEnum):
+    """Тип субъекта авторизации."""
+
+    USER = auto()
+    SERVICE_ACCOUNT = auto()
+    AI_AGENT = auto()
+
+
+@dataclass(frozen=True)
+class Identity:
+    """Субъект авторизации - аутентифицированная сущность выполняющая запрос."""
+
+    id: UUID
+    type_: IdentityType
+
+    email: Email | None = None
+    organization_id: UUID | None = None
+    membership_id: UUID | None = None
+
+    permissions: set[str] = field(default_factory=set)
+
+
+# =================================================================================================
+# Request & Response DTOs
+# =================================================================================================
 
 
 class UserCredentials(BaseModel):
@@ -46,3 +76,10 @@ class TokensResponse(BaseModel):
     expires_at: PositiveInt = Field(
         description="Время истечения access токена в формате timestamp",
     )
+
+
+class LogoutRequest(BaseModel):
+    """Запрос для выхода из учётной записи."""
+
+    access_token: str = Field(description="Основной токен для аутентификации (живёт 15-30 минут)")
+    refresh_token: str = Field(description="Долгоживущий токен")

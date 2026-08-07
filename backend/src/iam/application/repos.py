@@ -1,5 +1,3 @@
-from typing import Protocol
-
 from uuid import UUID
 
 from src.iam.domain.entities import Invitation, Membership, Role, User
@@ -24,13 +22,6 @@ class MembershipRepository(Repository[Membership]):
 class RoleRepository(Repository[Role]):
 
     async def get_by_code(self, code: str) -> Role | None: ...
-
-
-class TokenStore(Protocol):
-
-    async def revoke(self, jti: UUID, user_id: UUID, exp: int, reason: str) -> bool: ...
-
-    async def is_revoked(self, jti: UUID) -> bool: ...
 
 
 class InvitationRepository(Repository[Invitation]):

@@ -9,7 +9,7 @@ from src.shared.schemas import Page, Pagination
 from ..domain.entities import Invitation, User
 from ..domain.repos import UserFilters
 from ..domain.vo import Email, FullName, PasswordHash, Username, UserRole
-from .models import InvitationOrm, UserOrm
+from src.iam.infra.database.models import InvitationOrm, UserOrm
 
 
 class UserMapper(ModelMapper[User, UserOrm]):

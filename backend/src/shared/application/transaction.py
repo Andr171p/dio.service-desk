@@ -5,7 +5,7 @@ from src.shared.domain.events import EventPublisher
 from .uow import UnitOfWork
 
 
-class Transaction[EntityT: Entity]:
+class Transaction:
     def __init__(
             self,
             uow: UnitOfWork,
@@ -16,7 +16,7 @@ class Transaction[EntityT: Entity]:
         self._event_publisher = event_publisher
         self._recorder = recorder
 
-    async def __call__(self, *entities: EntityT) -> None:
+    async def __call__(self, *entities: Entity) -> None:
         events = []
         for entity in entities:
             events.extend(entity.collect_events())
