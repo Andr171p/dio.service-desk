@@ -17,7 +17,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock requirements.txt* ./
 
 # Устанавливаем uv (самый быстрый installer в 2026)
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type_=cache,target=/root/.cache/uv \
     pip install --no-cache-dir uv && \
     uv sync --frozen --no-install-project --no-dev
 
