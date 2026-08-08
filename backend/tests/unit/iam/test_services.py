@@ -150,7 +150,7 @@ class TestCreateTokensForUser:
 
         # 3. Проверка access токена
         assert access_payload["sub"] == f"{user.id}"
-        assert access_payload["type_"] == "access"
+        assert access_payload["type"] == "access"
         assert access_payload["email"] == user.email
         assert access_payload["role"] == user.role
 
@@ -160,7 +160,7 @@ class TestCreateTokensForUser:
 
         # 4. Проверка refresh токена
         assert refresh_payload["sub"] == f"{user.id}"
-        assert refresh_payload["type_"] == "refresh"
+        assert refresh_payload["type"] == "refresh"
 
 
 class TestAuthServiceRegister:

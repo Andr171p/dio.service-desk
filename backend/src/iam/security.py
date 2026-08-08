@@ -8,10 +8,11 @@ from datetime import timedelta
 from uuid import UUID, uuid4
 
 import jwt
+import zxcvbn_rs_py
 from passlib.context import CryptContext
 
 from src.core.settings import settings
-from src.iam.domain.exceptions import UnauthorizedError
+from src.iam.domain.exceptions import UnauthorizedError, WeakPasswordError
 from src.iam.domain.vo import Email
 from src.shared.utils.time import current_datetime
 
@@ -53,6 +54,19 @@ async def verify_password_async(plain_password: str, password_hash: str) -> bool
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         crypto_executor, verify_password, plain_password, password_hash
+    )
+
+
+async def validate_password_strength_async(
+        password: str, email: Email | None = None, *, min_score: int = 3,
+) -> None:
+    """Асинхронная обёртка для проверки надёжности пароля."""
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        crypto_executor,
+        validate_password_strength,
+        password, email, min_score,
     )
 
 
@@ -147,3 +161,24 @@ def decode_token(token: str) -> dict[str, Any]:
         raise UnauthorizedError("Token signature expired!") from None
     except jwt.PyJWTError:
         raise UnauthorizedError("Invalid token!") from None
+
+
+def validate_password_strength(
+        password: str, email: Email | None = None, *, min_score: int = 3,
+) -> None:
+    """
+    Проверяет надежность пароля с помощью Rust-реализации zxcvbn.
+    При слабом пароле выбрасывает WeakPasswordError
+    """
+
+    sanitized_inputs = [email.value] if email is not None else []
+
+    result = zxcvbn_rs_py.zxcvbn(password, user_inputs=sanitized_inputs)
+
+    if result < min_score:
+        warning = result.feedback.warning.value if result.feedback.warning else None
+        suggestions = [
+            suggestion.value for suggestion in result.feedback.suggestions
+        ] if result.feedback.suggestions else []
+
+        raise WeakPasswordError("Password is too weak.", suggestions=suggestions, warning=warning)

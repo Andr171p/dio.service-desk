@@ -113,7 +113,7 @@ class TestAddComment:
 
         assert response.text == data.text.strip()
         assert response.ticket_id == created_ticket.id
-        assert response.type_ == CommentType.PUBLIC
+        assert response.type == CommentType.PUBLIC
 
         added_comment = await fake_comment_repo.read(response.id)
 

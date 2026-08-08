@@ -27,7 +27,7 @@ class TestCreate:
             version="3.0.5",
             category=ProductCategory.ERP,
             status=ProductStatus.ACTIVE,
-            attributes={"environment": "production", "license_type": "cloud"},
+            attributes={"_environment": "production", "license_type": "cloud"},
         )
 
     @pytest.fixture
@@ -46,7 +46,7 @@ class TestCreate:
                 vendor="ДИО-Консалт",
                 category=ProductCategory.WEB,
                 status=ProductStatus.ACTIVE,
-                attributes={"environment": "local", "framework": "Wagtail"}
+                attributes={"_environment": "local", "framework": "Wagtail"}
             )
         ]
 

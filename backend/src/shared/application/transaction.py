@@ -9,11 +9,11 @@ class Transaction:
     def __init__(
             self,
             uow: UnitOfWork,
-            event_publisher: EventPublisher,
+            publisher: EventPublisher,
             recorder: ActivityRecorder | None = None,
     ) -> None:
         self._uow = uow
-        self._event_publisher = event_publisher
+        self._publisher = publisher
         self._recorder = recorder
 
     async def __call__(self, *entities: Entity) -> None:
@@ -26,4 +26,4 @@ class Transaction:
 
         await self._uow.commit()
 
-        await self._event_publisher.publish_all(events)
+        await self._publisher.publish_all(events)

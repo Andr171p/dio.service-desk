@@ -53,7 +53,7 @@ class TestValidateToken:
             assert payload["sub"] == str(user_id)
             assert payload["email"] == email
             assert payload["role"] == user_role.value
-            assert payload["type_"] == "access"
+            assert payload["type"] == "access"
             assert "organization_id" not in payload
 
             assert isinstance(payload["iat"], (int, float))
@@ -76,7 +76,7 @@ class TestValidateToken:
             assert payload["sub"] == str(user_id)
             assert payload["email"] == email
             assert payload["role"] == user_role.value
-            assert payload["type_"] == "access"
+            assert payload["type"] == "access"
             assert payload["organization_id"] == str(counterparty_id)
 
     def test_validate_token_correct_refresh_token(self):
@@ -88,7 +88,7 @@ class TestValidateToken:
             payload = decode_token(refresh_token)
 
             assert payload["sub"] == str(user_id)
-            assert payload["type_"] == "refresh"
+            assert payload["type"] == "refresh"
             assert "email" not in payload
             assert "role" not in payload
             assert "organization_id" not in payload
@@ -155,7 +155,7 @@ class TestCreateAccessToken:
             assert payload["sub"] == f"{user_id}"
             assert payload["email"] == email
             assert payload["role"] == user_role.value
-            assert payload["type_"] == "access"
+            assert payload["type"] == "access"
 
             assert payload["iat"] == expected_iat
             assert payload["exp"] == expected_exp
@@ -181,7 +181,7 @@ class TestCreateAccessToken:
             assert payload["sub"] == f"{user_id}"
             assert payload["email"] == email
             assert payload["role"] == user_role.value
-            assert payload["type_"] == "access"
+            assert payload["type"] == "access"
 
             assert payload["iat"] == expected_iat
             assert payload["exp"] == expected_exp
@@ -203,7 +203,7 @@ class TestCreateRefreshToken:
             payload = decode_token(refresh_token)
 
             assert payload["sub"] == f"{user_id}"
-            assert payload["type_"] == "refresh"
+            assert payload["type"] == "refresh"
             assert "email" not in payload
             assert "role" not in payload
 

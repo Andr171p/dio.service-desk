@@ -45,7 +45,7 @@ class EmailChannel:
         template_name = EMAIL_TEMPLATE_MAP.get(notification.type)
         if template_name is None:
             logger.warning(
-                "No such template registered for this notification type_ - '%s'",
+                "No such template registered for this notification type - '%s'",
                 notification.type.value
             )
         try:

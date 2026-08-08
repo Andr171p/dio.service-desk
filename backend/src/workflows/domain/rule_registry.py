@@ -11,13 +11,13 @@ Workflow Rule Registry
 1. **Rule** (доменная сущность)
    Хранится в базе данных как часть Workflow / Transition.
    Содержит только:
-       - type_   (строковый идентификатор)
+       - type   (строковый идентификатор)
        - config (JSON-конфигурация)
        - order, kind и т.д.
 
 2. **RuleDefinition** (описание реализации)
    Живёт только в коде приложения.
-   Связывает строковый `type_` с:
+   Связывает строковый `type` с:
        - Pydantic-схемой конфигурации
        - функцией-исполнителем (executor)
 
@@ -37,7 +37,7 @@ Workflow Rule Registry
 1. Описываете конфигурацию через Pydantic-модель.
 2. Регистрируете executor с помощью декоратора ``@rule``.
 3. Workflow Engine во время выполнения:
-       definition = get_rule(rule.type_)
+       definition = get_rule(rule.type)
        config = definition.config_schema.model_validate(rule.config)
        definition.executor(aggregate_type, config)
 
@@ -71,7 +71,7 @@ class RuleDefinition[AggregateT: AggregateRoot, ConfigT: BaseModel]:
 
     Workflow хранит в базе данных только:
 
-        type_
+        type
         config
 
     Во время выполнения Workflow Engine находит RuleDefinition через Registry,

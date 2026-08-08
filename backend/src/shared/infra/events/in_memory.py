@@ -1,20 +1,14 @@
-from typing import TypeVar
-
 import asyncio
 import logging
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 
-from faststream.rabbit import RabbitBroker
-
-from ..domain.events import Event
+from src.shared.domain.events import Event
 
 logger = logging.getLogger(__name__)
 
-EventT = TypeVar("EventT", bound=Event)
 
-
-class EventBus:
+class ImMemoryEventBus:
     def __init__(self, max_queue_size: int = 1000) -> None:
         self._queue: asyncio.Queue[Event] = asyncio.Queue(maxsize=max_queue_size)
         self._handlers: dict[
@@ -28,7 +22,7 @@ class EventBus:
 
         self._handlers[event_type].append(handler)
 
-    async def publish(self, event: EventT) -> None:
+    async def publish(self, event: Event) -> None:
         """Публикация события: добавляет событие во внутреннюю очередь."""
 
         try:
@@ -98,26 +92,5 @@ class EventBus:
                 await self._task
             except asyncio.CancelledError:
                 logger.exception("Error occurred while task stopping")
+
         logger.info("EventBus stopped")
-
-
-class FastStreamEventPublisher:
-    def __init__(
-            self, broker: RabbitBroker, event_topic_map: dict[type[Event], str]
-    ) -> None:
-        self.broker = broker
-        self.event_topic_map = event_topic_map
-
-    async def publish(self, event: EventT) -> None:
-        topic = self.event_topic_map.get(type(event))
-        if topic is None:
-            logger.warning(
-                "Domain event `%s` was not handled! No such topic registered.",
-                type(event).__name__
-            )
-            return
-        await self.broker.publish(event, queue=topic)
-
-    async def publish_all(self, events: list[Event]) -> None:
-        for event in events:
-            await self.publish(event)

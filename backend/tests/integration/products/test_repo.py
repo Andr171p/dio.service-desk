@@ -24,7 +24,7 @@ async def seed_products(session):
             """,
             category=ProductCategory.ERP,
             status=ProductStatus.ACTIVE,
-            attributes={"environment": "production", "licence_type": "cloud"},
+            attributes={"_environment": "production", "licence_type": "cloud"},
         ),
         SoftwareProductOrm(
             name="1С:Бухгалтерия",

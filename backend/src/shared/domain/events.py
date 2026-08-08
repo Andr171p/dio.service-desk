@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import ClassVar, Protocol
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -9,9 +9,9 @@ from ..utils.time import current_datetime
 
 @dataclass(frozen=True)
 class Event:
-    """
-    Базовый класс для всех доменных событий
-    """
+    """Базовый класс для всех доменных событий."""
+
+    event_type: ClassVar[str]
 
     event_id: UUID = field(default_factory=uuid4)
     occurred_on: datetime = field(default_factory=current_datetime)
@@ -29,7 +29,7 @@ class EventPublisher(Protocol):
     """
 
     async def publish(self, event: Event) -> None:
-        """Опубликовать доменное событие"""
+        """Опубликовать доменное событие."""
 
     async def publish_all(self, events: list[Event]) -> None:
-        """Опубликовать сразу несколько событий (удобно после сохранения агрегата)"""
+        """Опубликовать сразу несколько событий (удобно после сохранения агрегата)."""

@@ -1,12 +1,20 @@
+from typing import Any
+
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from ..domain.entities import Entity
-from ..domain.repos import Repository, get_or_raise_404
-from ..schemas import Page, Pagination
+from src.shared.domain.entities import Entity
+from src.shared.domain.exceptions import UnsupportedOperationError
+
+from .dtos import Page, Pagination
+from .repos import Repository, get_or_raise_404
 from .transaction import Transaction
+
+
+async def _method_not_allowed_stub(*args: Any, **kwargs: Any) -> Any:  # noqa: RUF029, ARG001
+    raise UnsupportedOperationError("This CRUD method not allowed.")
 
 
 class Crud[
@@ -19,12 +27,12 @@ class Crud[
     def __init__(
             self,
             repository: Repository[EntityT],
-            transaction: Transaction[EntityT],
+            transaction: Transaction,
             to_response: Callable[[EntityT], ResponseT],
             *,
-            create_handler: Callable[CreateP, Awaitable[EntityT]],
-            update_handler: Callable[UpdateP, Awaitable[EntityT]],
-            delete_handler: Callable[DeleteP, Awaitable[EntityT]],
+            create_handler: Callable[CreateP, Awaitable[EntityT]] = _method_not_allowed_stub,
+            update_handler: Callable[UpdateP, Awaitable[EntityT]] = _method_not_allowed_stub,
+            delete_handler: Callable[DeleteP, Awaitable[EntityT]] = _method_not_allowed_stub,
     ) -> None:
         self._repository = repository
         self._transaction = transaction
@@ -35,6 +43,9 @@ class Crud[
         self._delete_handler = delete_handler
 
     async def create(self, *args: CreateP.args, **kwargs: CreateP.kwargs) -> ResponseT:
+
+        if self._create_handler is None:
+            ...
 
         entity = await self._create_handler(*args, **kwargs)
 

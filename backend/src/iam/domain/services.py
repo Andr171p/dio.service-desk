@@ -1,10 +1,24 @@
 from .entities import Invitation, Membership, User
-from .vo import PasswordHash
+from .vo import FullName, PasswordHash, Username
 
 
-def accept_for_new_user(invitation: Invitation, password_hash: str) -> tuple[User, Membership]:
+def accept_for_new_user(
+        invitation: Invitation,
+        password_hash: str,
+        *,
+        full_name: str | None = None,
+        username: str | None = None,
+) -> tuple[User, Membership]:
 
-    user = User(email=invitation.email, password_hash=PasswordHash(password_hash))
+    full_name = FullName(full_name) if full_name is not None else None
+    username = Username(username) if username is not None else None
+
+    user = User(
+        email=invitation.email,
+        password_hash=PasswordHash(password_hash),
+        username=username,
+        full_name=full_name,
+    )
 
     membership = Membership(
         user_id=user.id,

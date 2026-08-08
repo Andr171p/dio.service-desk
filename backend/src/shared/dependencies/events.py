@@ -3,13 +3,13 @@ from typing import Annotated
 from fastapi import Depends
 
 from src.core.broker import rabbit_broker
-from src.event_config import EVENT_TOPIC_MAP
+from src.core.settings import settings
 from src.shared.domain.events import EventPublisher
-from src.shared.infra.events import FastStreamEventPublisher
+from src.shared.infra.events import RabbitMQEventPublisher
 
 
-def get_event_publisher() -> FastStreamEventPublisher:
-    return FastStreamEventPublisher(rabbit_broker, event_topic_map=EVENT_TOPIC_MAP)
+def get_event_publisher() -> EventPublisher:
+    return RabbitMQEventPublisher(rabbit_broker, exchange=settings.rabbit.exchange)
 
 
 EventPublisherDep = Annotated[EventPublisher, Depends(get_event_publisher)]

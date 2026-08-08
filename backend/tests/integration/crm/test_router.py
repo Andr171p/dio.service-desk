@@ -5,7 +5,7 @@ from fastapi import status
 @pytest.fixture
 def legal_entity_payload():
     return {
-        "type_": "Юридическое лицо",
+        "type": "Юридическое лицо",
         "name": "Головная компания",
         "legal_name": "ООО Головная компания",
         "inn": "1234567890",

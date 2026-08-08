@@ -1,4 +1,4 @@
-from src.iam.application.dtos import TokensResponse
+from src.iam.application.dtos import TokensResponse, UserCreate
 from src.iam.application.repos import (
     InvitationRepository,
     MembershipRepository,
@@ -6,7 +6,7 @@ from src.iam.application.repos import (
     UserRepository,
 )
 from src.iam.domain.services import accept_for_new_user
-from src.iam.security import hash_password_async
+from src.iam.security import hash_password_async, validate_password_strength_async
 from src.shared.application.transaction import Transaction
 from src.shared.domain.exceptions import AlreadyExistsError, NotFoundError
 
@@ -28,7 +28,7 @@ class RegistrationService:
         self._role_repo = role_repo
         self._invitation_repo = invitation_repo
 
-    async def accept_invitation(self, token: str, password: str) -> TokensResponse:
+    async def accept_invitation(self, token: str, dto: UserCreate) -> TokensResponse:
         """Принять приглашение. Регистрирует пользователя в системе."""
 
         if (invitation := await self._invitation_repo.get_by_token(token)) is None \
@@ -38,8 +38,12 @@ class RegistrationService:
         if (user := await self._user_repo.get_by_email(invitation.email)) is not None:
             raise AlreadyExistsError(f"User with email - '{user.email}' already registered.")
 
-        password_hash = await hash_password_async(password)
-        user, membership = accept_for_new_user(invitation, password_hash)
+        await validate_password_strength_async(dto.password, email=invitation.email)
+
+        password_hash = await hash_password_async(dto.password)
+        user, membership = accept_for_new_user(
+            invitation, password_hash, username=dto.username, full_name=dto.full_name,
+        )
 
         await self._user_repo.create(user)
         await self._membership_repo.create(membership)

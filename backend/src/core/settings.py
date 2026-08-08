@@ -62,19 +62,6 @@ class MinIOSettings(BaseSettings):
     endpoint_url: str = "http://localhost:9900"
 
 
-class ImgProxySettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="IMGPROXY_")
-
-    host: str = "localhost"
-    port: int = 8081
-    key: str = "<KEY>"
-    salt: str = "<SALT>"
-
-    @property
-    def url(self) -> str:
-        return f"http://{self.host}:{self.port}"
-
-
 class JWTSettings(BaseSettings):
     algorithm: str = "HS256"
     authentication_token_expires_in_minutes: int = 2
@@ -102,6 +89,8 @@ class RabbitSettings(BaseSettings):
     user: str = "guest"
     password: str = "guest"
     virtualhost: str = "/"
+
+    exchange: str = "app.events"
 
     @property
     def url(self) -> str:
@@ -186,7 +175,6 @@ class Settings(BaseSettings):
     postgres: PostgresSettings = PostgresSettings()
     redis: RedisSettings = RedisSettings()
     minio: MinIOSettings = MinIOSettings()
-    imgproxy: ImgProxySettings = ImgProxySettings()
     jwt: JWTSettings = JWTSettings()
     mail: MailSettings = MailSettings()
     rabbit: RabbitSettings = RabbitSettings()
@@ -197,4 +185,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print(settings.rabbit.url)

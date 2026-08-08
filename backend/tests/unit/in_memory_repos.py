@@ -298,12 +298,12 @@ class InMemoryCommentRepository(InMemoryRepository[Comment]):
         include_notes: bool,
         include_internal: bool,
     ) -> bool:
-        if comment.type_ == CommentType.PUBLIC:
+        if comment.type == CommentType.PUBLIC:
             return True
-        if include_internal and comment.type_ == CommentType.INTERNAL:
+        if include_internal and comment.type == CommentType.INTERNAL:
             return True
         return bool(
-            include_notes and comment.type_ == CommentType.NOTE and comment.author_id == user_id
+            include_notes and comment.type == CommentType.NOTE and comment.author_id == user_id
         )
 
     @staticmethod

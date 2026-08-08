@@ -204,7 +204,7 @@ class SqlCounterpartyRepository(SqlAlchemyRepository[Organization, CounterpartyO
                 SoftwareProductOrm.id == CounterpartyProductOrm.product_id,
             )
             .where(CounterpartyProductOrm.counterparty_id == counterparty_id)
-            .distinct()  # 1.1 Исключение дубликатов из-за разных environment
+            .distinct()  # 1.1 Исключение дубликатов из-за разных _environment
         )
 
         # 2. Подсчёт общего количества записей удовлетворяющих запросу

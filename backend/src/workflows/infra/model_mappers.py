@@ -12,7 +12,7 @@ from .models import StatusOrm, TransitionOrm, WorkflowOrm
 
 def _map_rule_to_dict(rule: Rule) -> Mapping[str, Any]:
     return {
-        "type_": rule.type_,
+        "type": rule.type_,
         "kind": rule.kind.value,
         "config": rule.config,
         "order": rule.order,
@@ -29,7 +29,7 @@ def _build_rule_from_dict(raw: Mapping[str, Any]) -> Rule:
         raise ValueError("Missing rule order")
 
     return Rule(
-        type_=raw.get("type_", ""),
+        type_=raw.get("type", ""),
         kind=RuleKind(kind_str),
         config=raw.get("config", {}),
         order=int(order),

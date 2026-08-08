@@ -1,37 +1,52 @@
-from typing import Any
+from typing import Annotated, Any
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from ...iam.domain.exceptions import PermissionDeniedError
-from ...shared.domain.entities import Entity
-from ...shared.utils.time import current_datetime
-from .vo import ChannelType, NotificationType
+from typing_extensions import Doc
+
+from src.shared.domain.entities import Entity
+from src.shared.utils.time import current_datetime
+
+from .vo import ChannelType
 
 
 @dataclass(kw_only=True)
 class Notification(Entity):
     """
-    Уведомление пользователю о событие в системе
+    Пользовательское уведомление.
+    Хранит факт возникновения уведомления и состояние прочтения пользователем.
     """
 
     user_id: UUID
+    channel_id: UUID
+
+    template_id: UUID
+    template_version: int
+
     title: str
     message: str
-    type: NotificationType
-    read: bool = field(default=False)
-    data: dict[str, Any] = field(default_factory=dict)  # Дополнительные данные
 
-    def mark_as_read(self, read_by: UUID) -> None:
-        """Пометить как прочитанное"""
+    data: dict[str, Any] = field(default_factory=dict)
 
-        if read_by != self.user_id:
-            raise PermissionDeniedError("You can only read your notifications")
+    sent_at: datetime | None = None
+    read_at: datetime | None = None
+    failed_at: datetime | None = None
 
-        if not self.read:
-            self.read = True
-            self.updated_at = current_datetime()
+    channel: ...
+
+    @property
+    def is_read(self) -> bool:
+        return self.read_at is not None
+
+    def mark_as_read(self) -> None:
+
+        if self.is_read:
+            return
+
+        self.read_at = current_datetime()
+        self.updated_at = current_datetime()
 
 
 @dataclass(kw_only=True)
@@ -41,12 +56,8 @@ class UserPreference(Entity):
     """
 
     user_id: UUID
-    notification_type: NotificationType
-
-    # По каким каналам получать уведомления
+    notification_type: str
     enabled_channels: set[ChannelType] = field(default_factory=set)
-
-    # Дополнительные настройки
     muted_until: datetime | None = None
 
     def __post_init__(self) -> None:
@@ -107,3 +118,39 @@ class UserPreference(Entity):
         if self.muted_until is not None:
             self.muted_until = None
             self.updated_at = current_datetime()
+
+
+@dataclass(kw_only=True)
+class Channel(Entity):
+    """Канал для отправки уведомления."""
+
+    type: ChannelType
+    code: Annotated[str, Doc("Уникальное имя канала, например - 'company-email'")]
+    name: str
+
+    params: dict[str, Any] = field(default_factory=dict)
+    meta: dict[str, Any] = field(default_factory=dict)
+
+    is_active: bool
+
+
+@dataclass(kw_only=True)
+class NotificationTemplate(Entity):
+    """Шаблон для отображения уведомления."""
+
+    channel_id: UUID
+
+    name: str
+    code: str
+
+    subject: str | None = None
+    body: str
+
+    organization_id: UUID | None = None
+
+    variables: set[str] = field(default_factory=set)
+    locale: str = "ru"
+
+    version: int
+    is_default: bool = True
+    is_active: bool = True

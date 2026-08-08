@@ -62,3 +62,9 @@ class RateLimitExceededError(AppError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     error_code = "RATE_LIMIT_EXCEEDED"
     public_message = "Превышен лимит запросов"
+
+
+class UnsupportedOperationError(AppError):
+    status_code = status.HTTP_405_METHOD_NOT_ALLOWED
+    error_code = "UNSUPPORTED_OPERATION"
+    public_message = "Операция удалена или не поддерживается."

@@ -39,7 +39,7 @@ def upgrade() -> None:
     sa.UniqueConstraint('storage_key')
     )
     op.create_table('counterparties',
-    sa.Column('type_', sa.Enum('INDIVIDUAL', 'INDIVIDUAL_ENTREPRENEUR', 'LEGAL_ENTITY', 'FOREIGN_LEGAL_ENTITY', 'BRANCH', name='counterpartytype'), nullable=False),
+    sa.Column('type', sa.Enum('INDIVIDUAL', 'INDIVIDUAL_ENTREPRENEUR', 'LEGAL_ENTITY', 'FOREIGN_LEGAL_ENTITY', 'BRANCH', name='counterpartytype'), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('legal_name', sa.String(), nullable=False),
     sa.Column('inn', sa.String(), nullable=False),

@@ -54,6 +54,35 @@ class User(Entity):
     password_hash: PasswordHash
     is_active: bool = True
 
+    def update(
+            self,
+            username: Username | None = None,
+            full_name: FullName | None = None,
+            avatar_url: str | None = None
+    ) -> None:
+        """Обновляет профиль пользователя."""
+
+        changes = False
+
+        kwargs = {key: value for key, value in locals().items() if key != "self"}
+
+        for field_name, value in kwargs.items():
+            if value is not None and getattr(self, field_name) != value:
+                setattr(self, field_name, value)
+                changes = True
+
+        if changes:
+            self.updated_at = current_datetime()
+
+    def deactivate(self) -> None:
+        """Деактивировать учётную запись."""
+
+        if not self.is_active:
+            return
+
+        self.is_active = False
+        self.updated_at = current_datetime()
+
 
 @dataclass(kw_only=True)
 class ServiceAccount(Entity):

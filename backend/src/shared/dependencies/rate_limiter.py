@@ -4,9 +4,11 @@ from src.core.redis import redis_client
 from src.shared.domain.exceptions import RateLimitExceededError
 from src.shared.infra.rate_limiter import IdentifierFunc, RateLimiter, ip_identifier
 
+rate_limiter = RateLimiter(redis_client)
+
 
 def get_rate_limiter() -> RateLimiter:
-    return RateLimiter(redis_client)
+    return rate_limiter
 
 
 def create_rate_limiter(

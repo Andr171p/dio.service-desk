@@ -9,6 +9,8 @@ from src.iam.domain.exceptions import UnauthorizedError
 from src.iam.security import decode_token
 from src.shared.infra.cache import Cache
 
+from .base import get_cache
+
 http_bearer = HTTPBearer(auto_error=False)
 
 
@@ -18,7 +20,7 @@ def _build_identity_from_payload(payload: dict[str, Any]) -> Identity:
 
 async def get_current_identity(
         credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(http_bearer)],
-        cache: Cache[bool] = Depends(...),
+        cache: Cache[bool] = Depends(get_cache),
 ) -> Identity:
     if credentials is None:
         raise UnauthorizedError("Authorization header is missing.")

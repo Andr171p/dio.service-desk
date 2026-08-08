@@ -38,6 +38,7 @@ dependencies = [
     "taskiq>=0.12.4",
     "testcontainers[minio,postgres]>=4.14.2",
     "unidecode>=1.4.0",
+    "zxcvbn-rs-py>=0.3.0",
 ]
 
 [tool.ruff]
