@@ -9,7 +9,7 @@ from typing_extensions import Doc
 from src.shared.domain.entities import Entity
 from src.shared.utils.time import current_datetime
 
-from .vo import ChannelType
+from .vo import ChannelType, NotificationStatus
 
 
 @dataclass(kw_only=True)
@@ -27,25 +27,66 @@ class Notification(Entity):
 
     title: str
     message: str
-
     data: dict[str, Any] = field(default_factory=dict)
+
+    status: NotificationStatus = NotificationStatus.PENDING
 
     sent_at: datetime | None = None
     read_at: datetime | None = None
     failed_at: datetime | None = None
 
-    channel: ...
-
-    @property
-    def is_read(self) -> bool:
-        return self.read_at is not None
-
     def mark_as_read(self) -> None:
-
-        if self.is_read:
+        if self.status == NotificationStatus.READ:
             return
 
+        self.status = NotificationStatus.READ
         self.read_at = current_datetime()
+        self.updated_at = current_datetime()
+
+    def mark_as_failed(self) -> None:
+        if self.status == NotificationStatus.FAILED:
+            return
+
+        self.status = NotificationStatus.FAILED
+        self.failed_at = current_datetime()
+        self.updated_at = current_datetime()
+
+    def mark_as_sent(self) -> None:
+        if self.status == NotificationStatus.SENT:
+            return
+
+        self.status = NotificationStatus.SENT
+        self.sent_at = current_datetime()
+        self.updated_at = current_datetime()
+
+
+@dataclass(kw_only=True)
+class ContactPoint(Entity):
+    """Контактные данные пользователя для доставки уведомлений."""
+
+    user_id: UUID
+    organization_id: UUID | None = None
+
+    channel_type: ChannelType
+    channel_id: UUID | None = None
+
+    value: Annotated[str, Doc("Конечная точка на которую придёт уведомление.")]
+
+    verified_at: datetime | None = None
+    is_primary: bool = False
+    is_active: bool = True
+
+    meta: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def is_verified(self) -> bool:
+        return self.verified_at is not None
+
+    def verify(self) -> None:
+        if self.is_verified:
+            return
+
+        self.verified_at = current_datetime()
         self.updated_at = current_datetime()
 
 
@@ -59,11 +100,6 @@ class UserPreference(Entity):
     notification_type: str
     enabled_channels: set[ChannelType] = field(default_factory=set)
     muted_until: datetime | None = None
-
-    def __post_init__(self) -> None:
-        # 1. Добавление каналов по умолчанию
-        if not self.enabled_channels:
-            self.enabled_channels = {ChannelType.EMAIL, ChannelType.IN_APP}
 
     @property
     def is_muted(self) -> bool:

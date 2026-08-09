@@ -1,9 +1,16 @@
+import logging
 from uuid import UUID
 
-from src.notifications.domain.entities import NotificationTemplate
+from src.notifications.domain.entities import Channel, Notification, NotificationTemplate
+from src.notifications.infra.templates import render_template
+from src.shared.application.repos import get_or_raise_404
 from src.shared.domain.exceptions import NotFoundError
 
-from .repos import ChannelRepository, NotificationRepository, TemplateRepository
+from .dtos import NotificationRequest
+from .repos import ChannelRepository, ContactRepository, NotificationRepository, TemplateRepository
+from .senders import get_sender
+
+logger = logging.getLogger(__name__)
 
 
 async def resolve_template(
@@ -50,9 +57,62 @@ class NotificationService:
         notification_repo: NotificationRepository,
         template_repo: TemplateRepository,
         channel_repo: ChannelRepository,
+        contact_repo: ContactRepository,
     ) -> None:
         self._template_repo = template_repo
         self._notification_repo = notification_repo
         self._channel_repo = channel_repo
+        self._contact_repo = contact_repo
 
-    async def send(self): ...
+    async def notify(self, request: NotificationRequest) -> ...:
+
+        channel = await get_or_raise_404(self._channel_repo.read, request.channel_id, Channel)
+
+        template = await resolve_template(
+            self._template_repo,
+            code=request.template_code,
+            channel_id=request.channel_id,
+            locale=request.locale,
+            organization_id=request.organization_id,
+        )
+
+        rendered = render_template(
+            subject=template.subject, body=template.body, context=request.context,
+        )
+
+        notification = Notification(
+            user_id=request.user_id,
+            channel_id=channel.id,
+            template_id=template.id,
+            template_version=template.version,
+            title=rendered.subject or "",
+            message=rendered.body,
+            data=dict(request.context),
+        )
+
+        await self._notification_repo.create(notification)
+
+        sender = await get_sender(channel)
+
+        contact = await self._contact_repo.find(
+            user_id=request.user_id,
+            organization_id=request.organization_id,
+            channel_id=channel.id,
+            channel_type=channel.type,
+        )
+        if contact is None:
+            raise NotFoundError(
+                f"No sush contacts found for "
+                f"(channel={channel.type}, user={request.user_id}, "
+                f"organization={request.organization_id})"
+            )
+
+        try:
+            await sender.send(notification, contact)
+        except Exception:
+            notification.mark_as_failed()
+            logger.exception("Failed to send notification - '%s'", notification.id)
+        else:
+            notification.mark_as_sent()
+
+        await self._notification_repo.update(notification)

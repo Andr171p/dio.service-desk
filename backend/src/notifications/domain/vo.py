@@ -4,6 +4,15 @@ from enum import StrEnum
 from src.shared.domain.vo import ValueObject
 
 
+class NotificationStatus(StrEnum):
+    """Состояние отправки уведомления."""
+
+    PENDING = "pending"
+    SENT = "sent"
+    READ = "read"
+    FAILED = "failed"
+
+
 class ChannelType(StrEnum):
     """Каналы куда пользователи получают уведомление."""
 
