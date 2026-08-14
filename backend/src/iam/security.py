@@ -12,6 +12,7 @@ import zxcvbn_rs_py
 from passlib.context import CryptContext
 
 from src.core.settings import settings
+from src.iam.application.dtos import IdentityType
 from src.iam.domain.exceptions import UnauthorizedError, WeakPasswordError
 from src.iam.domain.vo import Email
 from src.shared.utils.time import current_datetime
@@ -116,6 +117,7 @@ def create_access_token(
         "jti": str(uuid4()),
 
         # Кастомные поля
+        "idt": IdentityType.USER.value,
         "mid": str(membership_id),
         "org_id": str(organization_id),
         "email": str(email),

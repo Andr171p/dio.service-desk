@@ -3,13 +3,14 @@ from typing import Annotated
 from fastapi import APIRouter, Body, status
 
 from src.iam.application.dtos import (
+    IdentityResponse,
     LoginResponse,
     LogoutRequest,
     TokenRequest,
     TokensResponse,
     UserCredentials,
 )
-from src.iam.dependencies import AuthServiceDep
+from src.iam.dependencies import AuthServiceDep, CurrentIdentity
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация | Auth"])
 
@@ -54,3 +55,13 @@ async def refresh_tokens(
 )
 async def logout(request: LogoutRequest, service: AuthServiceDep) -> TokensResponse:
     return await service.logout(request)
+
+
+@router.get(
+    path="/identity",
+    status_code=status.HTTP_200_OK,
+    response_model=IdentityResponse,
+    summary="Получить текущий авторизованный субъект"
+)
+async def get_current_identity(identity: CurrentIdentity) -> IdentityResponse:
+    return IdentityResponse.model_validate(identity)

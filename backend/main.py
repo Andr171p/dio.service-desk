@@ -105,7 +105,7 @@ def value_exception_handler(request: Request, exc: ValueError) -> JSONResponse: 
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
             "error": {
-                "code": "VALIDATION_ERROR",
+                "grant": "VALIDATION_ERROR",
                 "message": str(exc),
                 "status": status.HTTP_400_BAD_REQUEST,
                 "details": {},
@@ -120,7 +120,7 @@ def app_exception_handler(request: Request, exc: AppError) -> JSONResponse:  # n
         status_code=exc.status_code,
         content={
             "error": {
-                "code": exc.error_code,
+                "grant": exc.error_code,
                 "message": exc.message,
                 "public_message": exc.public_message,
                 "status": exc.status_code,

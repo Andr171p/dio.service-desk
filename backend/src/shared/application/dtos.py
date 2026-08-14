@@ -16,7 +16,7 @@ class TimeRangeFilters:
 
 
 class Pagination(BaseModel):
-    """Параметры пагинации, которые приходят от клиента (query params)."""
+    """Параметры пагинации, которые приходят от клиента (query config)."""
 
     page: PositiveInt = Field(default=1, ge=1, description="Номер страницы, начинается с 1")
     size: PositiveInt = Field(

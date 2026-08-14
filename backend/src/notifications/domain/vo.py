@@ -1,13 +1,15 @@
 from dataclasses import dataclass
 from enum import StrEnum
+from uuid import UUID
 
 from src.shared.domain.vo import ValueObject
 
 
-class NotificationStatus(StrEnum):
-    """Состояние отправки уведомления."""
+class DeliveryStatus(StrEnum):
+    """Состояние доставки уведомления."""
 
     PENDING = "pending"
+    SENDING = "sending"
     SENT = "sent"
     READ = "read"
     FAILED = "failed"
@@ -30,4 +32,12 @@ class ChannelRef(ValueObject):
     """Ссылка на канал уведомлений."""
 
     type: ChannelType
-    code: str
+    id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class TemplateRef(ValueObject):
+    """Ссылка на шаблон сообщения."""
+
+    id: UUID
+    version: int

@@ -3,10 +3,10 @@ from datetime import datetime
 from enum import IntEnum, auto
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, PositiveInt
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, PositiveInt
 
 from src.crm.application.dtos import OrganizationRef
-from src.iam.domain.vo import Email
+from src.iam.domain.vo import Email, PermissionScope
 
 
 class IdentityType(IntEnum):
@@ -28,7 +28,8 @@ class Identity:
     organization_id: UUID | None = None
     membership_id: UUID | None = None
 
-    permissions: set[str] = field(default_factory=set)
+    roles: frozenset[str] = field(default_factory=frozenset)
+    permissions: frozenset[str] = field(default_factory=frozenset)
 
 
 # =================================================================================================
@@ -85,6 +86,26 @@ class LogoutRequest(BaseModel):
     refresh_token: str = Field(description="Долгоживущий токен")
 
 
+class IdentityResponse(BaseModel):
+    """Текущий субъект авторизации."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID = Field(description="Идентификатор субъекта.")
+    type: IdentityType = Field(description="Тип субъекта.")
+
+    email: Email | None = Field(
+        None, description="Email (логин)", examples=["current.identity@mail.com"],
+    )
+    organization_id: UUID | None = Field(
+        None, description="Организация в которой состоит субъект.",
+    )
+    membership_id: UUID | None = Field(None, description="Привязка к организации.")
+
+    roles: set[str] = Field(default_factory=list, description="Системные названия ролей.")
+    permissions: set[str] = Field(default_factory=list, description="Список доступных прав.")
+
+
 # =================================================================================================
 # Users Request & Response DTOs
 # =================================================================================================
@@ -136,3 +157,17 @@ class UserQueryParamFilters(BaseModel):
     email: EmailStr | None = None
     username: str | None = None
     full_name: str | None = None
+
+
+# =================================================================================================
+# Repository filters DTOs
+# =================================================================================================
+
+
+@dataclass(frozen=True, slots=True)
+class PermissionFilters:
+    """Фильтры для получения списка прав."""
+
+    resource: str | None = None
+    action: str | None = None
+    scopes: list[PermissionScope] | None = None

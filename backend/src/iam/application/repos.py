@@ -1,8 +1,11 @@
 from uuid import UUID
 
-from src.iam.domain.entities import Invitation, Membership, Role, User
+from src.iam.domain.entities import Invitation, Membership, Permission, Role, User
 from src.iam.domain.vo import Email
+from src.shared.application.dtos import Page, Pagination
 from src.shared.domain.repos import Repository
+
+from .dtos import PermissionFilters
 
 
 class UserRepository(Repository[User]):
@@ -17,6 +20,15 @@ class MembershipRepository(Repository[Membership]):
     async def get_by_user_and_organization(
             self, user_id: UUID, organization_id: UUID,
     ) -> Membership | None: ...
+
+
+class PermissionRepository:
+
+    async def create_or_update(self, permission: ...) -> None: ...
+
+    async def find(
+            self, pagination: Pagination, filters: PermissionFilters | None = None,
+    ) -> Page[Permission]: ...
 
 
 class RoleRepository(Repository[Role]):

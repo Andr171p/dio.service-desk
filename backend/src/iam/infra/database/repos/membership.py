@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 
 from src.iam.domain.entities import Membership
-from src.iam.infra.database.model_mappers import MembershipMapper
+from src.iam.infra.database.mappers import MembershipMapper
 from src.iam.infra.database.models import MembershipOrm
 from src.shared.infra.database import SqlAlchemyRepository
 

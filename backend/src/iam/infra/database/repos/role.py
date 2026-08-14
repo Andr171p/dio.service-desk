@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from src.iam.domain.entities import Role
-from src.iam.infra.database.model_mappers import RoleMapper
+from src.iam.infra.database.mappers import RoleMapper
 from src.iam.infra.database.models import RoleOrm
 from src.shared.infra.database import SqlAlchemyRepository
 

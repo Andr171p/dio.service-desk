@@ -1,71 +1,37 @@
-from typing import ClassVar, Self
+from typing import ClassVar
 
 import re
 from dataclasses import dataclass, field
-from enum import StrEnum, auto
+from enum import StrEnum
 
 from email_validator import EmailNotValidError, validate_email
 
 from src.shared.domain.vo import ValueObject
 
 
-class UserType(StrEnum):
-    """Тип пользователя."""
+class PermissionScope(StrEnum):
+    """
+    Уровни доступа:
+     - `global` - админ платформы.
+     - `organization` - в рамках компании.
+     - `project` - в рамках проекта.
+     - `own` - только своё.
+     - `object` - уровень объекта.
+    """
 
-    CUSTOMER = auto()
-    STAFF = auto()  # Внутренний сотрудник
+    GLOBAL = "global"
+    ORGANIZATION = "organization"
+    PROJECT = "project"
+    OWN = "own"
+    OBJECT = "object"
 
 
-class UserRole(StrEnum):
-    """Роли пользователей"""
+@dataclass(frozen=True, slots=True)
+class PermissionGrant:
+    """Назначенное право."""
 
-    # Клиентские
-    CUSTOMER_ADMIN = auto()  # администратор клиентской стороны
-    CUSTOMER = auto()  # клиент / обычный пользователь
-
-    # Команда поддержки
-    SUPPORT_AGENT = auto()  # сотрудник поддержки (1 линия)
-    SUPPORT_MANAGER = auto()  # старший сотрудник поддержки (team lead)
-
-    # Команда разработки
-    DEVELOPER = auto()
-
-    # Бизнес роли
-    ACCOUNT_MANAGER = auto()
-    FINANCE = auto()
-
-    ADMIN = auto()  # системный администратор
-
-    @property
-    def is_customer(self) -> bool:
-        return self.value in {self.CUSTOMER, self.CUSTOMER_ADMIN}
-
-    @property
-    def is_support(self) -> bool:
-        return self.value in {self.SUPPORT_AGENT, self.SUPPORT_MANAGER, self.ADMIN}
-
-    @property
-    def is_staff(self) -> bool:
-        return self.value not in {self.CUSTOMER, self.CUSTOMER_ADMIN}
-
-    @classmethod
-    def staff_roles(cls) -> set[Self]:
-        return {
-            cls.ADMIN,
-            cls.SUPPORT_MANAGER,
-            cls.SUPPORT_AGENT,
-            cls.DEVELOPER,
-            cls.ACCOUNT_MANAGER,
-            cls.FINANCE,
-        }
-
-    @classmethod
-    def support_roles(cls) -> set[Self]:
-        return {cls.SUPPORT_AGENT, cls.SUPPORT_MANAGER}
-
-    @classmethod
-    def customer_roles(cls) -> set[Self]:
-        return {cls.CUSTOMER, cls.CUSTOMER_ADMIN}
+    permission: str
+    scope: PermissionScope
 
 
 @dataclass(frozen=True, slots=True)

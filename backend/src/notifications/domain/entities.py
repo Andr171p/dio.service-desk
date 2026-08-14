@@ -9,53 +9,76 @@ from typing_extensions import Doc
 from src.shared.domain.entities import Entity
 from src.shared.utils.time import current_datetime
 
-from .vo import ChannelType, NotificationStatus
+from .vo import ChannelRef, ChannelType, DeliveryStatus, TemplateRef
 
 
-@dataclass(kw_only=True)
-class Notification(Entity):
-    """
-    Пользовательское уведомление.
-    Хранит факт возникновения уведомления и состояние прочтения пользователем.
-    """
+@dataclass(frozen=True)
+class Notification:
+    """Уведомление для конкретного пользователя (immutable)."""
+
+    id: UUID
 
     user_id: UUID
-    channel_id: UUID
 
-    template_id: UUID
-    template_version: int
+    template: TemplateRef
+    channel: ChannelRef
 
     title: str
     message: str
-    data: dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any]
 
-    status: NotificationStatus = NotificationStatus.PENDING
+    meta: dict[str, Any] = field(default_factory=dict)
+    dedup_key: str | None = None
+
+    created_at: datetime = field(default_factory=current_datetime)
+
+
+@dataclass(kw_only=True)
+class NotificationDelivery(Entity):
+    """Факт доставки уведомления."""
+
+    notification_id: UUID
+    channel_id: UUID
+    contact_point_id: UUID
+
+    status: DeliveryStatus
+    attempts: int = 0
 
     sent_at: datetime | None = None
     read_at: datetime | None = None
     failed_at: datetime | None = None
 
-    def mark_as_read(self) -> None:
-        if self.status == NotificationStatus.READ:
+    error_message: str | None = None
+
+    def mark_as_sending(self) -> None:
+        if self.status == DeliveryStatus.SENDING:
             return
 
-        self.status = NotificationStatus.READ
+        self.status = DeliveryStatus.SENDING
+        self.updated_at = current_datetime()
+
+    def mark_as_read(self) -> None:
+        if self.status == DeliveryStatus.READ:
+            return
+
+        self.status = DeliveryStatus.READ
         self.read_at = current_datetime()
         self.updated_at = current_datetime()
 
-    def mark_as_failed(self) -> None:
-        if self.status == NotificationStatus.FAILED:
+    def mark_as_failed(self, error_message: str) -> None:
+        if self.status == DeliveryStatus.FAILED:
             return
 
-        self.status = NotificationStatus.FAILED
+        self.status = DeliveryStatus.FAILED
+        self.error_message = error_message
         self.failed_at = current_datetime()
         self.updated_at = current_datetime()
 
     def mark_as_sent(self) -> None:
-        if self.status == NotificationStatus.SENT:
+        if self.status == DeliveryStatus.SENT:
             return
 
-        self.status = NotificationStatus.SENT
+        self.status = DeliveryStatus.SENT
         self.sent_at = current_datetime()
         self.updated_at = current_datetime()
 
@@ -97,7 +120,7 @@ class UserPreference(Entity):
     """
 
     user_id: UUID
-    notification_type: str
+    notification_code: str
     enabled_channels: set[ChannelType] = field(default_factory=set)
     muted_until: datetime | None = None
 
@@ -164,7 +187,7 @@ class Channel(Entity):
     code: Annotated[str, Doc("Уникальное имя канала, например - 'company-email'")]
     name: str
 
-    params: dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     meta: dict[str, Any] = field(default_factory=dict)
 
     is_active: bool

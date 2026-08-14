@@ -103,7 +103,7 @@ class TestCanEditTask:
         permission = can_edit_task(task=task, user_id=user_id, user_role=user_role)
 
         assert permission.allowed is False
-        assert "do not have permission to edit this task" in permission.reason.lower()
+        assert "do not have grant to edit this task" in permission.reason.lower()
 
     @pytest.mark.parametrize(
         "user_role",
@@ -137,7 +137,7 @@ class TestCanEditTask:
         permission = can_edit_task(task=task, user_id=user_id, user_role=user_role)
 
         assert permission.allowed is False
-        assert "do not have permission to edit this task" in permission.reason.lower()
+        assert "do not have grant to edit this task" in permission.reason.lower()
 
 
 class TestCanMoveStatus:
@@ -441,7 +441,7 @@ class TestCanRequestReview:
         )
 
         assert permission.allowed is False
-        assert "don't have permission to request review" in permission.reason
+        assert "don't have grant to request review" in permission.reason
 
     @pytest.mark.parametrize(
         "reviewer_role",

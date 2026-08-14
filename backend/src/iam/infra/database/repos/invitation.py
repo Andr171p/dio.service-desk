@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 from src.iam.domain.entities import Invitation
 from src.iam.domain.vo import Email
-from src.iam.infra.database.model_mappers import InvitationMapper
+from src.iam.infra.database.mappers import InvitationMapper
 from src.iam.infra.database.models import InvitationOrm
 from src.shared.infra.database import SqlAlchemyRepository
 

@@ -1,14 +1,12 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from uuid import UUID
 
-from src.notifications.domain.entities import Channel, Notification, NotificationTemplate
-from src.notifications.infra.templates import render_template
-from src.shared.application.repos import get_or_raise_404
+from src.notifications.domain.entities import NotificationDelivery, NotificationTemplate
 from src.shared.domain.exceptions import NotFoundError
 
-from .dtos import NotificationRequest
-from .repos import ChannelRepository, ContactRepository, NotificationRepository, TemplateRepository
-from .senders import get_sender
+from .repos import DeliveryRepository, TemplateRepository
 
 logger = logging.getLogger(__name__)
 
@@ -51,68 +49,28 @@ async def resolve_template(
     return default_template
 
 
-class NotificationService:
-    def __init__(
-        self,
-        notification_repo: NotificationRepository,
-        template_repo: TemplateRepository,
-        channel_repo: ChannelRepository,
-        contact_repo: ContactRepository,
-    ) -> None:
-        self._template_repo = template_repo
-        self._notification_repo = notification_repo
-        self._channel_repo = channel_repo
-        self._contact_repo = contact_repo
+@asynccontextmanager
+async def delivery_attempt(
+    delivery: NotificationDelivery, delivery_repo: DeliveryRepository,
+) -> AsyncIterator[NotificationDelivery]:
+    """
+    Управляет жизненным циклом попытки доставки.
 
-    async def notify(self, request: NotificationRequest) -> ...:
+    Гарантирует:
+    - сохранение состояния перед отправкой;
+    - фиксацию успеха;
+    - фиксацию ошибки.
+    """
 
-        channel = await get_or_raise_404(self._channel_repo.read, request.channel_id, Channel)
+    delivery.mark_as_sending()
+    await delivery_repo.update(delivery)
 
-        template = await resolve_template(
-            self._template_repo,
-            code=request.template_code,
-            channel_id=request.channel_id,
-            locale=request.locale,
-            organization_id=request.organization_id,
-        )
-
-        rendered = render_template(
-            subject=template.subject, body=template.body, context=request.context,
-        )
-
-        notification = Notification(
-            user_id=request.user_id,
-            channel_id=channel.id,
-            template_id=template.id,
-            template_version=template.version,
-            title=rendered.subject or "",
-            message=rendered.body,
-            data=dict(request.context),
-        )
-
-        await self._notification_repo.create(notification)
-
-        sender = await get_sender(channel)
-
-        contact = await self._contact_repo.find(
-            user_id=request.user_id,
-            organization_id=request.organization_id,
-            channel_id=channel.id,
-            channel_type=channel.type,
-        )
-        if contact is None:
-            raise NotFoundError(
-                f"No sush contacts found for "
-                f"(channel={channel.type}, user={request.user_id}, "
-                f"organization={request.organization_id})"
-            )
-
-        try:
-            await sender.send(notification, contact)
-        except Exception:
-            notification.mark_as_failed()
-            logger.exception("Failed to send notification - '%s'", notification.id)
-        else:
-            notification.mark_as_sent()
-
-        await self._notification_repo.update(notification)
+    try:
+        yield delivery
+    except Exception as exc:
+        delivery.mark_as_failed(str(exc))
+        logger.exception("Notification - '%s' delivery failed", delivery.notification_id)
+    else:
+        delivery.mark_as_sent()
+    finally:
+        await delivery_repo.update(delivery)

@@ -1,8 +1,8 @@
-from src.iam.domain.entities import Invitation, Membership, Role, User
-from src.iam.domain.vo import Email, FullName, PasswordHash, Username
+from src.iam.domain.entities import Invitation, Membership, Permission, Role, User
+from src.iam.domain.vo import Email, FullName, PasswordHash, PermissionScope, Username
 from src.shared.infra.database import ModelMapper
 
-from .models import InvitationOrm, MembershipOrm, RoleOrm, UserOrm
+from .models import InvitationOrm, MembershipOrm, PermissionOrm, RoleOrm, UserOrm
 
 
 class UserMapper(ModelMapper[User, UserOrm]):
@@ -64,6 +64,28 @@ class MembershipMapper(ModelMapper[Membership, MembershipOrm]):
             roles=list(membership.roles),
             expires_at=membership.expires_at,
             is_active=membership.is_active,
+        )
+
+
+class PermissionMapper(ModelMapper[Permission, PermissionOrm]):
+    @staticmethod
+    def from_model(model: PermissionOrm) -> Permission:
+        return Permission(
+            resource=model.resource,
+            action=model.action,
+            title=model.title,
+            description=model.description,
+            scopes=frozenset(PermissionScope(scope) for scope in model.scopes),
+        )
+
+    @staticmethod
+    def to_model(permission: Permission) -> PermissionOrm:
+        return PermissionOrm(
+            resource=permission.resource,
+            action=permission.action,
+            title=permission.title,
+            description=permission.description,
+            scopes=list(map(str, permission.scopes)),
         )
 
 

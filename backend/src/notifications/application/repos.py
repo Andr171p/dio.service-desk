@@ -4,6 +4,7 @@ from src.notifications.domain.entities import (
     Channel,
     ContactPoint,
     Notification,
+    NotificationDelivery,
     NotificationTemplate,
 )
 from src.notifications.domain.vo import ChannelType
@@ -16,7 +17,7 @@ class ChannelRepository(Repository[Channel]):
 
 class ContactRepository(Repository[ContactPoint]):
 
-    async def find(
+    async def get_primary(
             self,
             user_id: UUID,
             organization_id: UUID | None = None,
@@ -25,8 +26,10 @@ class ContactRepository(Repository[ContactPoint]):
     ) -> ContactPoint | None: ...
 
 
-class NotificationRepository(Repository[Notification]):
-    ...
+class NotificationRepository(Repository[Notification]): ...
+
+
+class DeliveryRepository(Repository[NotificationDelivery]): ...
 
 
 class TemplateRepository(Repository[NotificationTemplate]):
@@ -39,3 +42,12 @@ class TemplateRepository(Repository[NotificationTemplate]):
             locale: str,
             organization_id: UUID | None,
     ) -> NotificationTemplate | None: ...
+
+
+__all__ = [
+    "ChannelRepository",
+    "ContactRepository",
+    "DeliveryRepository",
+    "NotificationRepository",
+    "TemplateRepository",
+]

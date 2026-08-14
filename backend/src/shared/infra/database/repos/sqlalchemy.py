@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import Base
 from src.shared.application.dtos import Page, Pagination, TimeRangeFilters
 from src.shared.domain.entities import Entity
-from src.shared.infra.database.model_mappers import ModelMapper
+from src.shared.infra.database.mappers import ModelMapper
 
 
 class SqlAlchemyRepository[EntityT: Entity, ModelT: Base]:

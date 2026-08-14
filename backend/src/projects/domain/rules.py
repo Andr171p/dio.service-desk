@@ -142,7 +142,7 @@ class TargetRoleAssignmentRule:
             allowed_roles.update(self.ASSIGNMENT_MATRIX.get(project_role, set()))
 
         if not allowed_roles:
-            return PermissionResult(False, "You have no permission to assign any project roles")
+            return PermissionResult(False, "You have no grant to assign any project roles")
 
         if not self.target_roles.issubset(allowed_roles):
             denied_roles = self.target_roles - allowed_roles

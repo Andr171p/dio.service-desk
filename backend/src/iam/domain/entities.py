@@ -13,7 +13,7 @@ from src.shared.utils.time import current_datetime, get_expiration_time
 
 from .events import UserInvited
 from .types import RoleId
-from .vo import Email, FullName, PasswordHash, Username
+from .vo import Email, FullName, PasswordHash, PermissionGrant, PermissionScope, Username
 
 INVITATION_EXPIRES_IN_DAYS = 7
 
@@ -220,7 +220,10 @@ class Permission:
     resource: str
     action: str
 
+    title: str
     description: str | None = None
+
+    scopes: frozenset[PermissionScope] = field(default_factory=frozenset)
 
     @property
     def code(self) -> str:
@@ -235,29 +238,31 @@ class Role(Entity):
     code: str
     description: str | None = None
 
-    permissions: set[str]
+    permissions: set[PermissionGrant]
     is_default: Annotated[bool, Doc("Является ли роль системной")]
 
-    def has_permission(self, permission: str) -> bool:
-        return permission in self.permissions
+    def has_permission(self, permission: str, scope: PermissionScope) -> bool:
+        return PermissionGrant(permission=permission, scope=scope) in self.permissions
 
-    def grant_permission(self, permission: str) -> None:
+    def grant_permission(self, grant: str, scope: PermissionScope) -> None:
 
-        if permission in self.permissions:
+        grant = PermissionGrant(permission=grant, scope=scope)
+        if grant in self.permissions:
             return
 
-        self.permissions.add(permission)
+        self.permissions.add(grant)
         self.updated_at = current_datetime()
 
-    def revoke_permission(self, permission: str) -> None:
+    def revoke_permission(self, grant: str, scope: PermissionScope) -> None:
 
-        if permission not in self.permissions:
+        grant = PermissionGrant(permission=grant, scope=scope)
+        if grant not in self.permissions:
             return
 
         if len(self.permissions) == 1:
-            raise InvariantViolationError("Role must contain a leat one permission.")
+            raise InvariantViolationError("Role must contain a leat one grant.")
 
-        self.permissions.discard(permission)
+        self.permissions.discard(grant)
         self.updated_at = current_datetime()
 
 
