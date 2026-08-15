@@ -161,7 +161,7 @@ class UserQueryParamFilters(BaseModel):
 
 
 # =================================================================================================
-# Permissions Request & Response DTOs
+# Roles & Permissions Request & Response DTOs
 # =================================================================================================
 
 
@@ -189,5 +189,32 @@ class PermissionResponse(BaseModel):
     description: str | None = Field(None, description="Человекочитаемое описание для UI.")
 
     scopes: set[PermissionScope] = Field(
-        default_factory=set, description="Области действия доступные для этого права.",
+        default_factory=set,
+        description="Области действия доступные для этого права.",
+    )
+
+
+class RoleResponse(BaseModel):
+    """Роль - оперирует набором прав."""
+
+    id: UUID = Field(description="Уникальный идентификатор роли.")
+    created_at: datetime = Field(description="Дата создания.")
+    updated_at: datetime = Field(description="Дата последнего обновления.")
+
+    name: str = Field(
+        description="Человекочитаемое название роли.",
+        examples=["Системный администратор", "HR Manager", "Developer"],
+    )
+    code: str = Field(
+        description="Уникальное системное название.",
+        examples=["admin", "support_agent"],
+    )
+    description: str | None = Field(None, description="Описание возможностей.")
+
+    permissions: set[str] = Field(
+        description="Список прав назначенных этой роли.",
+        examples=[{"task.create", "task.update", "task.read"}],
+    )
+    is_default: bool = Field(
+        description="Является ли роль системной (системные роли нельзя изменять).",
     )

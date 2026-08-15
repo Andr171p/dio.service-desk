@@ -26,7 +26,7 @@ def require_permissions(*permissions: str, any_of: bool = True) -> Callable[[Ide
     """
     Создаёт FastAPI dependency для проверки permissions текущего Identity.
 
-    При `any_of=Tru` достаточно одного из указанных permissions.
+    При `any_of=True` достаточно одного из указанных permissions.
     При `any_of=False` Identity должен обладать всеми permissions.
     """
 
