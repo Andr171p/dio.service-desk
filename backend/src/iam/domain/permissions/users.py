@@ -7,8 +7,8 @@ READ = register_permission(
     Permission(
         resource="users",
         action="read",
-        scopes=frozenset({PermissionScope.ORGANIZATION}),
-        description="Просмотр пользователей организации",
+        scopes=frozenset({PermissionScope.ORGANIZATION, PermissionScope.OWN}),
+        title="Просмотр пользователей",
     ),
 )
 
@@ -16,8 +16,8 @@ UPDATE = register_permission(
     Permission(
         resource="users",
         action="update",
-        scope=PermissionScope.ORGANIZATION,
-        description="Изменение пользователей организации",
+        scopes=frozenset({PermissionScope.ORGANIZATION, PermissionScope.OWN}),
+        title="Изменение пользователей",
     ),
 )
 
@@ -25,7 +25,7 @@ DEACTIVATE = register_permission(
     Permission(
         resource="users",
         action="deactivate",
-        scope=PermissionScope.ORGANIZATION,
-        description="Деактивация пользователей организации",
+        scopes=frozenset({PermissionScope.ORGANIZATION}),
+        title="Деактивация пользователя",
     ),
 )

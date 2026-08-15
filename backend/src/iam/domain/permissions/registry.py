@@ -57,13 +57,14 @@ from src.iam.domain.entities import Permission
 _permission_registry: dict[str, Permission] = {}
 
 
-def register_permission(permission: Permission) -> None:
+def register_permission(permission: Permission) -> Permission:
     """Зарегистрировать системное разрешение."""
 
     if permission.code in _permission_registry:
         raise ValueError(f"Permission already registered: {permission.code}.")
 
     _permission_registry[permission.code] = permission
+    return permission
 
 
 def get_permissions() -> tuple[Permission, ...]:
