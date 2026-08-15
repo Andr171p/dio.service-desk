@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, PositiveIn
 
 from src.crm.application.dtos import OrganizationRef
 from src.iam.domain.vo import Email, PermissionScope
+from src.shared.application.dtos import BaseQueryParamFilters
 
 
 class IdentityType(IntEnum):
@@ -160,14 +161,33 @@ class UserQueryParamFilters(BaseModel):
 
 
 # =================================================================================================
-# Repository filters DTOs
+# Permissions Request & Response DTOs
 # =================================================================================================
 
 
-@dataclass(frozen=True, slots=True)
-class PermissionFilters:
+class PermissionQueryParamFilters(BaseQueryParamFilters):
     """Фильтры для получения списка прав."""
 
     resource: str | None = None
     action: str | None = None
     scopes: list[PermissionScope] | None = None
+
+
+class PermissionResponse(BaseModel):
+    """Право - действие в системе."""
+
+    model_config = ConfigDict(from_attributes=True, revalidate_instances="always")
+
+    resource: str = Field(description="Ресурс на который выдаётся право.", examples=["task"])
+    action: str = Field(
+        description="Действие которое можно выполнить над ресурсом.",
+        examples=["create", "update"],
+    )
+    code: str = Field(description="Системный код: resource:action", examples=["task.create"])
+
+    title: str = Field(description="Название права.", examples=["Создать задачу"])
+    description: str | None = Field(None, description="Человекочитаемое описание для UI.")
+
+    scopes: set[PermissionScope] = Field(
+        default_factory=set, description="Области действия доступные для этого права.",
+    )

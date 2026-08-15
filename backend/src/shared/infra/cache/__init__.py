@@ -36,6 +36,13 @@ Design principles
 from .base import Cache
 from .in_memory import InMemoryCache
 from .multi_level import MultiLevelCache
-from .redis import RedisCache, Serializer
+from .redis import PrimitiveSerializer, RedisCache, Serializer
 
-__all__ = ["Cache", "InMemoryCache", "MultiLevelCache", "RedisCache", "Serializer"]
+__all__ = [
+    "Cache",
+    "InMemoryCache",
+    "MultiLevelCache",
+    "PrimitiveSerializer",
+    "RedisCache",
+    "Serializer",
+]

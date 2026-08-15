@@ -6,19 +6,21 @@ from src.core.redis import redis_client
 from src.iam.application.repos import (
     InvitationRepository,
     MembershipRepository,
+    PermissionRepository,
     RoleRepository,
     UserRepository,
 )
 from src.iam.infra.database.repos import (
     SqlInvitationRepository,
     SqlMembershipRepository,
+    SqlPermissionRepository,
     SqlRoleRepository,
     SqlUserRepository,
 )
 from src.shared.dependencies import DBSession
-from src.shared.infra.cache import Cache, RedisCache
+from src.shared.infra.cache import Cache, PrimitiveSerializer, RedisCache
 
-redis_cache = RedisCache[bool](redis_client)
+redis_cache = RedisCache[bool](redis_client, serializer=PrimitiveSerializer(bool))
 
 
 def get_cache() -> Cache[bool]:
@@ -37,6 +39,10 @@ def get_role_repository(session: DBSession) -> RoleRepository:
     return SqlRoleRepository(session)
 
 
+def get_permission_repository(session: DBSession) -> PermissionRepository:
+    return SqlPermissionRepository(session)
+
+
 def get_invitation_repository(session: DBSession) -> InvitationRepository:
     return SqlInvitationRepository(session)
 
@@ -45,5 +51,6 @@ CacheDep = Annotated[Cache[bool], Depends(get_cache)]
 
 UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
 MembershipRepositoryDep = Annotated[MembershipRepository, Depends(get_membership_repository)]
+PermissionRepositoryDep = Annotated[PermissionRepository, Depends(get_permission_repository)]
 RoleRepositoryDep = Annotated[RoleRepository, Depends(get_role_repository)]
 InvitationRepositoryDep = Annotated[InvitationRepository, Depends(get_invitation_repository)]

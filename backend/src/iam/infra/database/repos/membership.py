@@ -16,7 +16,7 @@ class SqlMembershipRepository(SqlAlchemyRepository[Membership, MembershipOrm]):
         stmt = select(self.model).where(
             (self.model.user_id == user_id) & (self.model.deleted_at.is_(None)),
         )
-        results = await self.session.execute(stmt)
+        results = await self._session.execute(stmt)
         models = results.scalars().all()
         return tuple(self.model_mapper.from_model(model) for model in models)
 
@@ -26,6 +26,6 @@ class SqlMembershipRepository(SqlAlchemyRepository[Membership, MembershipOrm]):
         stmt = select(self.model).where(
             (self.model.user_id == user_id) & (self.model.organization_id == organization_id),
         )
-        result = await self.session.execute(stmt)
+        result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self.model_mapper.from_model(model)

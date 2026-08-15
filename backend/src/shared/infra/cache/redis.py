@@ -1,3 +1,5 @@
+from typing import Protocol
+
 import logging
 import uuid
 
@@ -6,6 +8,8 @@ from redis.asyncio import Redis
 from .base import Cache
 
 logger = logging.getLogger(__name__)
+
+_TRUE_STRINGS = ("true", "1")
 
 
 def build_key(prefix: str, uid: uuid.UUID) -> str:
@@ -19,11 +23,38 @@ class Serializer[T](Protocol):
     def loads(self, value: bytes) -> T: ...
 
 
-class RedisCache[T](Cache[T]):
-    serializer: Serializer[T]
+class PrimitiveSerializer[T]:
+    def __init__(self, cast_type: type[T]) -> None:
+        self._cast_type = cast_type
 
-    def __init__(self, redis: Redis, ttl: int | None = None) -> None:
+    def dumps(self, value: T) -> bytes:
+        if isinstance(value, bytes):
+            return value
+
+        return str(value).encode("utf-8")
+
+    def loads(self, value: bytes) -> T:
+        if self._cast_type is bytes:
+            return value
+
+        value_str = value.decode("utf-8")
+
+        if self._cast_type is bool:
+            return value_str.lower() in _TRUE_STRINGS
+
+        return self._cast_type(value_str)
+
+
+class RedisCache[T](Cache[T]):
+
+    def __init__(
+            self,
+            redis: Redis,
+            serializer: Serializer[T],
+            ttl: int | None = None
+    ) -> None:
         self.redis = redis
+        self.serializer = serializer
         self.ttl = ttl
 
     async def get(self, key: str) -> T | None:

@@ -14,6 +14,6 @@ class SqlRoleRepository(SqlAlchemyRepository[Role, RoleOrm]):
         stmt = select(self.model).where(
             (self.model.code == code) & (self.model.deleted_at.is_(None)),
         )
-        result = await self.session.execute(stmt)
+        result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self.model_mapper.from_model(model) if model else None

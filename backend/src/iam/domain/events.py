@@ -3,7 +3,8 @@ from uuid import UUID
 
 from src.shared.domain.events import Event
 
-from .vo import Email, UserRole
+from .types import RoleId
+from .vo import Email
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -14,6 +15,6 @@ class UserInvited(Event):
 
     invitation_id: UUID
     email: Email
-    granted_roles: set[UserRole]
+    granted_roles: set[RoleId]
     counterparty_id: UUID | None = None
     invited_by: UUID

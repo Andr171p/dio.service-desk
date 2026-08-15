@@ -4,9 +4,9 @@ from pydantic import HttpUrl
 
 from src.crm.application.dtos import OrganizationRef
 from src.crm.domain.entities import Organization
-from src.iam.domain.entities import Membership, User
+from src.iam.domain.entities import Membership, Permission, User
 
-from .dtos import LoginResponse, MembershipResponse, UserResponse
+from .dtos import LoginResponse, MembershipResponse, PermissionResponse, UserResponse
 
 
 def build_login_response(
@@ -51,4 +51,15 @@ def build_user_response(user: User) -> UserResponse:
         full_name=full_name,
         avatar_url=avatar_url,
         is_active=user.is_active,
+    )
+
+
+def build_permission_response(permission: Permission) -> PermissionResponse:
+    return PermissionResponse(
+        resource=permission.resource,
+        action=permission.action,
+        code=permission.code,
+        title=permission.title,
+        description=permission.description,
+        scopes=set(permission.scopes),
     )

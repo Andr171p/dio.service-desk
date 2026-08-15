@@ -15,6 +15,6 @@ class SqlUserRepository(SqlAlchemyRepository[User, UserOrm]):
         stmt = select(self.model).where(
             (self.model.email == email.value) & (self.model.deleted_at.is_(None)),
         )
-        result = await self.session.execute(stmt)
+        result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self.model_mapper.from_model(model) if model else None

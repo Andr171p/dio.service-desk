@@ -66,5 +66,5 @@ async def get_user_list(
         filters: Annotated[UserQueryParamFilters, Depends()],
         user_repo: UserRepositoryDep,
 ) -> Page[UserResponse]:
-    page = await user_repo.paginate(pagination, filters=filters)
+    page = await user_repo.find(pagination, filters=filters)
     return page.to_response(build_user_response)

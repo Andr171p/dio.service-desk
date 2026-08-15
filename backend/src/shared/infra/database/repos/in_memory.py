@@ -20,8 +20,8 @@ class InMemoryRepository[EntityT: Entity]:
         return Page(
             page=params.page,
             size=params.size,
-            total_items=len(items),
-            total_pages=1,
+            total=len(items),
+            pages=1,
             has_next=False,
             has_prev=False,
             items=items[:params.size],

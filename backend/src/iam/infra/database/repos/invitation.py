@@ -15,7 +15,7 @@ class SqlInvitationRepository(SqlAlchemyRepository[Invitation, InvitationOrm]):
         stmt = select(self.model).where(
             (self.model.token == token) & (self.model.deleted_at.is_(None)),
         )
-        result = await self.session.execute(stmt)
+        result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self.model_mapper.from_model(model) if model else None
 
@@ -23,6 +23,6 @@ class SqlInvitationRepository(SqlAlchemyRepository[Invitation, InvitationOrm]):
         stmt = select(self.model).where(
             (self.model.email == email.value) & (self.model.deleted_at.is_(None)),
         )
-        results = await self.session.execute(stmt)
+        results = await self._session.execute(stmt)
         models = results.scalars().all()
         return tuple(self.model_mapper.from_model(model) for model in models)

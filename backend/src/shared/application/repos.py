@@ -6,7 +6,7 @@ from uuid import UUID
 from src.shared.domain.entities import Entity
 from src.shared.domain.exceptions import NotFoundError
 
-from .dtos import Page, Pagination
+from .dtos import BaseQueryParamFilters, Page, Pagination
 
 
 class Repository[EntityT: Entity](Protocol):
@@ -15,7 +15,7 @@ class Repository[EntityT: Entity](Protocol):
 
     async def read(self, uid: UUID) -> EntityT | None: ...
 
-    async def paginate[FiltersT](
+    async def find[FiltersT: BaseQueryParamFilters](
             self, pagination: Pagination, filters: FiltersT | None = None,
     ) -> Page[EntityT]: ...
 
@@ -50,10 +50,10 @@ class RepositoryDecorator[EntityT: Entity](Repository[EntityT]):
     async def read(self, uid: UUID) -> EntityT | None:
         return await self._repo.read(uid)
 
-    async def paginate[FiltersT](
+    async def find[FiltersT](
             self, pagination: Pagination, filters: FiltersT | None = None,
     ) -> Page[EntityT]:
-        return await self._repo.paginate(pagination, filters=filters)
+        return await self._repo.find(pagination, filters=filters)
 
     async def update(self, entity: EntityT) -> None:
         await self._repo.update(entity)

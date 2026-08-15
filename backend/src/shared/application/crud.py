@@ -61,7 +61,7 @@ class Crud[
     async def paginate[FilterT](
             self, pagination: Pagination, filters: FilterT | None = None,
     ) -> Page[ResponseT]:
-        page = await self._repository.paginate(pagination, filters)
+        page = await self._repository.find(pagination, filters)
         return page.to_response(self._to_response)
 
     async def update(self, *args: UpdateP.args, **kwargs: UpdateP.kwargs) -> ResponseT:

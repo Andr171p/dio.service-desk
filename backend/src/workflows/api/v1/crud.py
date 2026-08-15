@@ -58,7 +58,7 @@ async def delete_workflow(
 async def get_workflows(
         pagination: PaginationDep, crud: WorkflowCrudDep,
 ) -> Page[WorkflowResponse]:
-    return await crud.paginate(pagination)
+    return await crud.find(pagination)
 
 
 @router.get(

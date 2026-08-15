@@ -156,7 +156,7 @@ async def paginate_users(
         user_repo: UserRepoDep,
         filters: UserFilters = Depends(get_user_filters),
 ) -> Page[UserResponse]:
-    page = await user_repo.paginate(pagination, filters=filters)
+    page = await user_repo.find(pagination, filters=filters)
     return page.to_response(map_user_to_response)
 
 
@@ -178,5 +178,5 @@ async def get_invitation_or_404(
 async def paginate_invitations(
         pagination: PaginationDep, invitation_repo: InvitationRepoDep
 ) -> Page[InvitationResponse]:
-    page = await invitation_repo.paginate(pagination)
+    page = await invitation_repo.find(pagination)
     return page.to_response(map_invitation_to_response)

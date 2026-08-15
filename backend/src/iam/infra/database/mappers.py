@@ -88,6 +88,16 @@ class PermissionMapper(ModelMapper[Permission, PermissionOrm]):
             scopes=list(map(str, permission.scopes)),
         )
 
+    @staticmethod
+    def to_dict(permission: Permission) -> dict[str, str | list[str] | None]:
+        return {
+            "resource": permission.resource,
+            "action": permission.action,
+            "title": permission.title,
+            "description": permission.description,
+            "scopes": list(map(str, permission.scopes)),
+        }
+
 
 class RoleMapper(ModelMapper[Role, RoleOrm]):
     @staticmethod

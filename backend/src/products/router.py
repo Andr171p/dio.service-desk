@@ -54,7 +54,7 @@ async def get_products(
         filters: ProductFiltersDep,
         repository: ProductRepoDep,
 ) -> Page[ProductResponse]:
-    page = await repository.paginate(
+    page = await repository.find(
         pagination, category=filters.category, status=filters.status, search=filters.query
     )
     return page.to_response(map_product_to_response)

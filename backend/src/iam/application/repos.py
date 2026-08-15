@@ -5,7 +5,7 @@ from src.iam.domain.vo import Email
 from src.shared.application.dtos import Page, Pagination
 from src.shared.domain.repos import Repository
 
-from .dtos import PermissionFilters
+from .dtos import PermissionQueryParamFilters
 
 
 class UserRepository(Repository[User]):
@@ -27,7 +27,7 @@ class PermissionRepository:
     async def create_or_update(self, permission: ...) -> None: ...
 
     async def find(
-            self, pagination: Pagination, filters: PermissionFilters | None = None,
+            self, pagination: Pagination, filters: PermissionQueryParamFilters | None = None,
     ) -> Page[Permission]: ...
 
 
