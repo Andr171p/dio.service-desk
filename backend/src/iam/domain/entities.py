@@ -1,6 +1,7 @@
 from typing import Annotated, Self
 
 import secrets
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -239,7 +240,32 @@ class Role(Entity):
     description: str | None = None
 
     permissions: set[PermissionGrant]
-    is_default: Annotated[bool, Doc("Является ли роль системной")]
+    is_default: Annotated[bool, Doc("Является ли роль системной")] = False
+    author_id: UUID | None = None
+
+    def update(
+            self,
+            name: str | None = None,
+            code: str | None = None,
+            description: str | None = None,
+    ) -> None:
+        if self.is_default:
+            raise InvariantViolationError("Default role cannot be updated.")
+
+        changed = False
+
+        updates: Mapping[str, str | None] = {
+            "name": name,
+            "code": code,
+            "description": description,
+        }
+        for field_name, value in updates.items():
+            if value is not None and getattr(self, field_name) != value:
+                setattr(self, field_name, value)
+                changed = True
+
+        if changed:
+            self.updated_at = current_datetime()
 
     def has_permission(self, permission: str, scope: PermissionScope) -> bool:
         return PermissionGrant(permission=permission, scope=scope) in self.permissions
@@ -264,6 +290,15 @@ class Role(Entity):
 
         self.permissions.discard(grant)
         self.updated_at = current_datetime()
+
+    def remove(self) -> None:
+        if self.is_default:
+            raise InvariantViolationError("Default role cannot be deleted.")
+
+        if self.is_deleted:
+            return
+
+        self.deleted_at = current_datetime()
 
 
 @dataclass(kw_only=True)

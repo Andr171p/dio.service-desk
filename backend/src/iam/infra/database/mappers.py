@@ -1,5 +1,12 @@
 from src.iam.domain.entities import Invitation, Membership, Permission, Role, User
-from src.iam.domain.vo import Email, FullName, PasswordHash, PermissionScope, Username
+from src.iam.domain.vo import (
+    Email,
+    FullName,
+    PasswordHash,
+    PermissionGrant,
+    PermissionScope,
+    Username,
+)
 from src.shared.infra.database import ModelMapper
 
 from .models import InvitationOrm, MembershipOrm, PermissionOrm, RoleOrm, UserOrm
@@ -110,7 +117,13 @@ class RoleMapper(ModelMapper[Role, RoleOrm]):
             name=model.name,
             code=model.code,
             description=model.description,
-            permissions=set(model.permissions),
+            permissions={
+                PermissionGrant(
+                    permission=grant["permission"],
+                    scope=PermissionScope(grant["scope"]),
+                )
+                for grant in model.permissions
+            },
             is_default=model.is_default,
         )
 
@@ -124,7 +137,10 @@ class RoleMapper(ModelMapper[Role, RoleOrm]):
             name=role.name,
             code=role.code,
             description=role.description,
-            permissions=set(role.permissions),
+            permissions=[
+                {"permission": grant.permission, "scope": grant.scope.value}
+                for grant in role.permissions
+            ],
             is_default=role.is_default,
         )
 

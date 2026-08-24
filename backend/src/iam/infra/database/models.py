@@ -1,3 +1,5 @@
+from typing import Any
+
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, Index, UniqueConstraint
@@ -64,7 +66,7 @@ class RoleOrm(Base):
     code: Mapped[StrUnique]
     description: Mapped[TextNull]
 
-    permissions: Mapped[list[str]] = mapped_column(JSONB)
+    permissions: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
     is_default: Mapped[bool]
 
 

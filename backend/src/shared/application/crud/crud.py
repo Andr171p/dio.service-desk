@@ -65,7 +65,7 @@ class Crud[
             raise UnsupportedOperationError("Create operation is not supported.")
 
         async def _base_create(dto_: CreateT, options_: CreateOptionsT | None = None) -> EntityT:
-            entity_ = self._create_handler(dto_, options_)
+            entity_ = await self._create_handler(dto_, options_)
 
             await self._repository.create(entity_)
             await self._transaction(entity_)
@@ -82,7 +82,7 @@ class Crud[
     async def read(self, uid: UUID, options: ReadOptionsT | None = None) -> ResponseT:
         entity = await get_or_raise_404(self._repository.read, uid, type[EntityT])
 
-        async def _base_read(entity_: EntityT, options_: ReadOptionsT | None = None) -> EntityT:  # noqa: RUF029, ARG001
+        async def _base_read(entity_: EntityT, options_: ReadOptionsT | None = None) -> EntityT:
             return entity_
 
         read = (
@@ -92,8 +92,6 @@ class Crud[
         )
 
         return self._to_response(read)
-
-    async def find(self, pagination: ..., filters: ...) -> ...: ...
 
     async def update(
         self, uid: UUID, dto: UpdateT, options: UpdateOptionsT | None = None
@@ -114,9 +112,9 @@ class Crud[
             return handled
 
         updated = (
-            self._update_wrapper(_base_update, entity, dto, options)
+            await self._update_wrapper(_base_update, entity, dto, options)
             if self._update_wrapper
-            else _base_update(entity, dto, options)
+            else await _base_update(entity, dto, options)
         )
 
         return self._to_response(updated)

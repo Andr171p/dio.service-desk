@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, PositiveInt
 
 from src.crm.application.dtos import OrganizationRef
-from src.iam.domain.vo import Email, PermissionScope
+from src.iam.domain.vo import Email, PermissionGrant, PermissionScope
 from src.shared.application.dtos import BaseQueryParamFilters
 
 
@@ -85,6 +85,10 @@ class LogoutRequest(BaseModel):
 
     access_token: str = Field(description="Основной токен для аутентификации (живёт 15-30 минут)")
     refresh_token: str = Field(description="Долгоживущий токен")
+
+# =================================================================================================
+# Invitations Request & Response DTOs
+# =================================================================================================
 
 
 class IdentityResponse(BaseModel):
@@ -194,6 +198,45 @@ class PermissionResponse(BaseModel):
     )
 
 
+class CreateRoleDTO(BaseModel):
+    """Создание новой роли."""
+
+    name: str = Field(
+        min_length=1,
+        max_length=255,
+        description="Человекочитаемое название роли.",
+        examples=["Менеджер поддержки", "Разработчик", "HR менеджер"],
+    )
+    code: str = Field(
+        min_length=1,
+        max_length=100,
+        description="Уникальный системный код роли",
+        examples=["support_manager"],
+    )
+    description: str | None = Field(default=None, description="Описание роли.")
+    permissions: set[PermissionGrant] = Field(min_length=1, description="Назначенные разрешения.")
+
+
+class UpdateRoleDTO(BaseModel):
+    """Обновление роли."""
+
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+        description="Человекочитаемое название роли.",
+        examples=["Менеджер поддержки", "Разработчик", "HR менеджер"],
+    )
+    code: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="Уникальный системный код роли",
+        examples=["support_manager"],
+    )
+    description: str | None = Field(default=None, description="Описание роли.")
+
+
 class RoleResponse(BaseModel):
     """Роль - оперирует набором прав."""
 
@@ -211,10 +254,7 @@ class RoleResponse(BaseModel):
     )
     description: str | None = Field(None, description="Описание возможностей.")
 
-    permissions: set[str] = Field(
-        description="Список прав назначенных этой роли.",
-        examples=[{"task.create", "task.update", "task.read"}],
-    )
+    permissions: set[PermissionGrant] = Field(description="Список прав назначенных этой роли.")
     is_default: bool = Field(
         description="Является ли роль системной (системные роли нельзя изменять).",
     )

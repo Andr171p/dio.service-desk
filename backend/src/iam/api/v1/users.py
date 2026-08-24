@@ -18,7 +18,6 @@ router = APIRouter(prefix="/users", tags=["Пользователи | Users"])
 @router.get(
     path="/me",
     status_code=status.HTTP_200_OK,
-    response_model=UserResponse,
     summary="Получить текущего пользователя",
 )
 async def get_me(user: UserResponse = Depends(get_current_user)) -> UserResponse:
@@ -28,7 +27,6 @@ async def get_me(user: UserResponse = Depends(get_current_user)) -> UserResponse
 @router.patch(
     path="/me",
     status_code=status.HTTP_200_OK,
-    response_model=UserResponse,
     summary="Обновить данные текущего пользователя."
 )
 async def update_me(
@@ -43,7 +41,6 @@ async def update_me(
 @router.get(
     path="",
     status_code=status.HTTP_200_OK,
-    response_model=Page[UserResponse],
     dependencies=[get_current_identity],
     summary="Получить список пользователей",
 )
@@ -54,7 +51,6 @@ async def get_users(users: Page[UserResponse] = Depends(get_user_list)) -> Page[
 @router.get(
     path="/{user_id}",
     status_code=status.HTTP_200_OK,
-    response_model=UserResponse,
     dependencies=[Depends(get_current_identity)],
     summary="Получить конкретного пользователя",
 )

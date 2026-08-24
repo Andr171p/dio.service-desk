@@ -4,51 +4,22 @@ from uuid import UUID
 
 from fastapi import Depends
 
-from src.iam.application import crud
 from src.iam.application.builders import build_user_response
-from src.iam.application.dtos import UserQueryParamFilters, UserResponse, UserUpdate
-from src.iam.application.repos import UserRepository
+from src.iam.application.crud import role as role_crud
+from src.iam.application.dtos import UserQueryParamFilters, UserResponse
 from src.iam.domain.entities import User
-from src.shared.application.crud import Crud
 from src.shared.application.dtos import Page
 from src.shared.application.repos import get_or_raise_404
-from src.shared.dependencies import PaginationDep, TransactionDep
+from src.shared.dependencies import PaginationDep
 
 from .base import UserRepositoryDep
 from .identity import CurrentIdentity
-
-type UserCrud = Crud[
-    User,
-    UserResponse,
-    [()],
-    [UUID, UserUpdate, UserRepository],
-    [UUID, UserRepository],
-]
-
-
-def get_user_crud(user_repo: UserRepositoryDep, transaction: TransactionDep) -> UserCrud:
-    return Crud[
-        User,
-        UserResponse,
-        [()],
-        [UUID, UserUpdate, UserRepository],
-        [UUID, UserRepository],
-    ](
-        user_repo,
-        transaction,
-        build_user_response,
-        update_handler=crud.update_handler,
-        delete_handler=crud.delete_handler,
-    )
-
-
-UserCrudDep = Annotated[UserCrud, Depends(get_user_crud)]
 
 
 async def get_current_user(
         identity: CurrentIdentity, user_repo: UserRepositoryDep,
 ) -> UserResponse:
-    """Зависимость для получения текущего пользователя."""
+    """Зависимость для получения текущего пользователя (делает запрос в БД)."""
 
     user = await get_or_raise_404(user_repo.read, identity.id, User)
     return build_user_response(user)
@@ -68,3 +39,7 @@ async def get_user_list(
 ) -> Page[UserResponse]:
     page = await user_repo.find(pagination, filters=filters)
     return page.to_response(build_user_response)
+
+
+def get_role_crud() -> ...:
+    ...
