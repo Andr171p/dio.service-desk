@@ -209,15 +209,15 @@ class Email:
 
 
 @dataclass(frozen=True, slots=True)
-class PasswordHash(ValueObject):
+class SecretHash(ValueObject):
     value: str
 
     def __post_init__(self) -> None:
         if not self.value.strip():
-            raise ValueError("Password hash cannot be empty")
+            raise ValueError("Secret hash cannot be empty")
 
     def __repr__(self) -> str:
-        return "PasswordHash(******)"
+        return "SecretHash(******)"
 
     def __str__(self) -> str:
         return "******"

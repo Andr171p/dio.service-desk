@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 
 from src.iam.application.dtos import PermissionResponse
-from src.iam.dependencies import get_permission_list, require_permissions
+from src.iam.dependencies.permissions import get_permission_list, require_permissions
 from src.iam.domain.permissions import permissions as acl
 from src.shared.application.dtos import Page
 

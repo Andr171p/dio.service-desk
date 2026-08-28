@@ -10,7 +10,8 @@ from src.iam.application.dtos import (
     TokensResponse,
     UserCredentials,
 )
-from src.iam.dependencies import AuthServiceDep, CurrentIdentity
+from src.iam.dependencies import CurrentIdentity
+from src.iam.dependencies.services import AuthServiceDep
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация | Auth"])
 

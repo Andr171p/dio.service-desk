@@ -9,7 +9,7 @@ from src.iam.domain.exceptions import PermissionDeniedError
 from src.shared.application.dtos import Page
 from src.shared.dependencies import PaginationDep
 
-from .base import PermissionRepositoryDep
+from .repos import PermissionRepositoryDep
 from .identity import CurrentIdentity
 
 

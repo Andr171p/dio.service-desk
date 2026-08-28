@@ -7,6 +7,7 @@ from src.core.settings import settings
 from src.crm.application.repos import OrganizationRepository
 from src.iam.application.builders import build_login_response
 from src.iam.application.dtos import (
+    IdentityType,
     LoginResponse,
     LogoutRequest,
     TokenRequest,
@@ -63,7 +64,8 @@ def create_tokens_for_user(
     permissions = {permission for role in roles for permission in role.permissions}
 
     access_token = create_access_token(
-        user_id=user.id,
+        identity_id=user.id,
+        identity_type=IdentityType.USER,
         email=user.email,
         membership_id=membership.id,
         organization_id=membership.organization_id,

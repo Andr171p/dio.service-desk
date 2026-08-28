@@ -1,5 +1,5 @@
 from .entities import Invitation, Membership, User
-from .vo import FullName, PasswordHash, Username
+from .vo import FullName, SecretHash, Username
 
 
 def accept_for_new_user(
@@ -15,7 +15,7 @@ def accept_for_new_user(
 
     user = User(
         email=invitation.email,
-        password_hash=PasswordHash(password_hash),
+        password_hash=SecretHash(password_hash),
         username=username,
         full_name=full_name,
     )

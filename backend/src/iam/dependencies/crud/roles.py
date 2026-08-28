@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from fastapi import Depends
 
 from src.iam.application.dtos import CreateRoleDTO, Identity, RoleResponse, UpdateRoleDTO
-from src.iam.dependencies.base import RoleRepositoryDep
+from src.iam.dependencies.repos import RoleRepositoryDep
 from src.iam.domain.entities import Role
 from src.shared.application.crud import Crud
 from src.shared.dependencies import TransactionDep

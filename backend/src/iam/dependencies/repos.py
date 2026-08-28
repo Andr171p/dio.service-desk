@@ -8,6 +8,7 @@ from src.iam.application.repos import (
     MembershipRepository,
     PermissionRepository,
     RoleRepository,
+    ServiceAccountRepository,
     UserRepository,
 )
 from src.iam.infra.database.repos import (
@@ -15,6 +16,7 @@ from src.iam.infra.database.repos import (
     SqlMembershipRepository,
     SqlPermissionRepository,
     SqlRoleRepository,
+    SqlServiceAccountRepository,
     SqlUserRepository,
 )
 from src.shared.dependencies import DBSession
@@ -29,6 +31,10 @@ def get_cache() -> Cache[bool]:
 
 def get_user_repository(session: DBSession) -> UserRepository:
     return SqlUserRepository(session)
+
+
+def get_service_account_repository(session: DBSession) -> ServiceAccountRepository:
+    return SqlServiceAccountRepository(session)
 
 
 def get_membership_repository(session: DBSession) -> MembershipRepository:
@@ -50,6 +56,9 @@ def get_invitation_repository(session: DBSession) -> InvitationRepository:
 CacheDep = Annotated[Cache[bool], Depends(get_cache)]
 
 UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
+ServiceAccountRepositoryDep = Annotated[
+    ServiceAccountRepository, Depends(get_service_account_repository),
+]
 MembershipRepositoryDep = Annotated[MembershipRepository, Depends(get_membership_repository)]
 PermissionRepositoryDep = Annotated[PermissionRepository, Depends(get_permission_repository)]
 RoleRepositoryDep = Annotated[RoleRepository, Depends(get_role_repository)]

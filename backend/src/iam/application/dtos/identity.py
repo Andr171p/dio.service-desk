@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum, auto
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 from src.iam.domain.vo import Email
 
 
@@ -26,3 +28,23 @@ class Identity:
 
     roles: frozenset[str] = field(default_factory=frozenset)
     permissions: frozenset[str] = field(default_factory=frozenset)
+
+
+class IdentityResponse(BaseModel):
+    """Текущий субъект авторизации."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID = Field(description="Идентификатор субъекта.")
+    type: IdentityType = Field(description="Тип субъекта.")
+
+    email: EmailStr | None = Field(
+        None, description="Email (логин)", examples=["current.identity@mail.com"],
+    )
+    organization_id: UUID | None = Field(
+        None, description="Организация в которой состоит субъект.",
+    )
+    membership_id: UUID | None = Field(None, description="Привязка к организации.")
+
+    roles: set[str] = Field(default_factory=list, description="Системные названия ролей.")
+    permissions: set[str] = Field(default_factory=list, description="Список доступных прав.")

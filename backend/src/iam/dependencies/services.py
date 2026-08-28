@@ -2,14 +2,15 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.iam.application.services import AuthService, RegistrationService
+from src.iam.application.services import AuthService, OAuthService, RegistrationService
 from src.shared.dependencies import TransactionDep
 
-from .base import (
+from .repos import (
     CacheDep,
     InvitationRepositoryDep,
     MembershipRepositoryDep,
     RoleRepositoryDep,
+    ServiceAccountRepositoryDep,
     UserRepositoryDep,
 )
 
@@ -30,6 +31,13 @@ def get_auth_service(
     )
 
 
+def get_oauth_service(
+        service_account_repo: ServiceAccountRepositoryDep,
+        role_repo: RoleRepositoryDep,
+) -> OAuthService:
+    return OAuthService(service_account_repo=service_account_repo, role_repo=role_repo)
+
+
 def get_registration_service(
         transaction: TransactionDep,
         user_repo: UserRepositoryDep,
@@ -47,4 +55,5 @@ def get_registration_service(
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+OAuthServiceDep = Annotated[OAuthService, Depends(get_oauth_service)]
 RegistrationServiceDep = Annotated[RegistrationService, Depends(get_registration_service)]

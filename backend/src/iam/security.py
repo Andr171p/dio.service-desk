@@ -97,12 +97,14 @@ def create_authentication_token(user_id: UUID) -> str:
 
 
 def create_access_token(
-        user_id: UUID,
-        email: Email,
-        membership_id: UUID,
+        *,
+        identity_id: UUID,
+        identity_type: IdentityType,
         organization_id: UUID,
         roles: set[str],
         permissions: set[str],
+        email: Email | None = None,
+        membership_id: UUID | None = None,
 ) -> str:
 
     now = current_datetime()
@@ -110,20 +112,25 @@ def create_access_token(
 
     payload = {
         # Базовые поля
-        "sub": str(user_id),
+        "sub": str(identity_id),
         "exp": expires_at.timestamp(),
         "iat": now.timestamp(),
         "typ": "access",
         "jti": str(uuid4()),
 
         # Кастомные поля
-        "idt": IdentityType.USER.value,
-        "mid": str(membership_id),
+        "idt": identity_type.name.lower(),
         "org_id": str(organization_id),
-        "email": str(email),
         "roles": list(roles),
         "perms": list(permissions),
     }
+
+    # Специфичные для пользователя поля
+    if email is not None:
+        payload["email"] = email.value
+
+    if membership_id is not None:
+        payload["mid"] = str(membership_id)
 
     return jwt.encode(payload=payload, key=settings.secret_key, algorithm=settings.jwt.algorithm)
 

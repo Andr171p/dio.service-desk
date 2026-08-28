@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from uuid import UUID
 
 from src.shared.domain.entities import Entity
@@ -25,7 +25,7 @@ class Repository[EntityT: Entity](Protocol):
 
     async def exists(self, uid: UUID) -> bool: ...
 
-    async def get_by_ids(self, ids: list[UUID]) -> tuple[EntityT, ...]: ...
+    async def get_by_ids(self, ids: Sequence[UUID]) -> tuple[EntityT, ...]: ...
 
 
 async def get_or_raise_404[EntityT: Entity](
@@ -64,5 +64,5 @@ class RepositoryDecorator[EntityT: Entity](Repository[EntityT]):
     async def exists(self, uid: UUID) -> bool:
         return await self._repo.exists(uid)
 
-    async def get_by_ids(self, ids: list[UUID]) -> tuple[EntityT, ...]:
+    async def get_by_ids(self, ids: Sequence[UUID]) -> tuple[EntityT, ...]:
         return await self._repo.get_by_ids(ids)

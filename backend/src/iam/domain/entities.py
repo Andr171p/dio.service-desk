@@ -1,7 +1,6 @@
 from typing import Annotated, Self
 
 import secrets
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -10,11 +9,12 @@ from typing_extensions import Doc
 
 from src.shared.domain.entities import Entity
 from src.shared.domain.exceptions import InvariantViolationError
+from src.shared.domain.helpers import apply_changes
 from src.shared.utils.time import current_datetime, get_expiration_time
 
 from .events import UserInvited
 from .types import RoleId
-from .vo import Email, FullName, PasswordHash, PermissionGrant, PermissionScope, Username
+from .vo import Email, FullName, PermissionGrant, PermissionScope, SecretHash, Username
 
 INVITATION_EXPIRES_IN_DAYS = 7
 
@@ -52,28 +52,8 @@ class User(Entity):
     username: Username | None = None
     full_name: FullName | None = None
     avatar_url: str | None = None
-    password_hash: PasswordHash
+    password_hash: SecretHash
     is_active: bool = True
-
-    def update(
-            self,
-            username: Username | None = None,
-            full_name: FullName | None = None,
-            avatar_url: str | None = None
-    ) -> None:
-        """Обновляет профиль пользователя."""
-
-        changes = False
-
-        kwargs = {key: value for key, value in locals().items() if key != "self"}
-
-        for field_name, value in kwargs.items():
-            if value is not None and getattr(self, field_name) != value:
-                setattr(self, field_name, value)
-                changes = True
-
-        if changes:
-            self.updated_at = current_datetime()
 
     def deactivate(self) -> None:
         """Деактивировать учётную запись."""
@@ -108,7 +88,7 @@ class ServiceAccount(Entity):
     name: str
 
     client_id: str
-    client_secret_hash: ...
+    client_secret_hash: SecretHash
 
     organization_id: UUID
 
@@ -252,20 +232,7 @@ class Role(Entity):
         if self.is_default:
             raise InvariantViolationError("Default role cannot be updated.")
 
-        changed = False
-
-        updates: Mapping[str, str | None] = {
-            "name": name,
-            "code": code,
-            "description": description,
-        }
-        for field_name, value in updates.items():
-            if value is not None and getattr(self, field_name) != value:
-                setattr(self, field_name, value)
-                changed = True
-
-        if changed:
-            self.updated_at = current_datetime()
+        apply_changes(self, name=name, code=code, description=description)
 
     def has_permission(self, permission: str, scope: PermissionScope) -> bool:
         return PermissionGrant(permission=permission, scope=scope) in self.permissions

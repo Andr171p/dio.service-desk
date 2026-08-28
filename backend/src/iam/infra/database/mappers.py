@@ -1,15 +1,22 @@
-from src.iam.domain.entities import Invitation, Membership, Permission, Role, User
+from src.iam.domain.entities import Invitation, Membership, Permission, Role, ServiceAccount, User
 from src.iam.domain.vo import (
     Email,
     FullName,
-    PasswordHash,
     PermissionGrant,
     PermissionScope,
+    SecretHash,
     Username,
 )
 from src.shared.infra.database import ModelMapper
 
-from .models import InvitationOrm, MembershipOrm, PermissionOrm, RoleOrm, UserOrm
+from .models import (
+    InvitationOrm,
+    MembershipOrm,
+    PermissionOrm,
+    RoleOrm,
+    ServiceAccountOrm,
+    UserOrm,
+)
 
 
 class UserMapper(ModelMapper[User, UserOrm]):
@@ -24,7 +31,7 @@ class UserMapper(ModelMapper[User, UserOrm]):
             username=Username(model.username),
             full_name=FullName(model.full_name),
             avatar_url=model.avatar_url,
-            password_hash=PasswordHash(model.password_hash),
+            password_hash=SecretHash(model.password_hash),
             is_active=model.is_active,
         )
 
@@ -41,6 +48,38 @@ class UserMapper(ModelMapper[User, UserOrm]):
             avatar_url=entity.avatar_url,
             password_hash=entity.password_hash.get_hashed_value(),
             is_active=entity.is_active,
+        )
+
+
+class ServiceAccountMapper(ModelMapper[ServiceAccount, ServiceAccountOrm]):
+    @staticmethod
+    def from_model(model: ServiceAccountOrm) -> ServiceAccount:
+        return ServiceAccount(
+            id=model.id,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            deleted_at=model.deleted_at,
+            name=model.name,
+            client_id=model.client_id,
+            client_secret_hash=SecretHash(model.client_secret_hash),
+            organization_id=model.organization_id,
+            roles=set(model.roles),
+            is_active=model.is_active,
+        )
+
+    @staticmethod
+    def to_model(service_account: ServiceAccount) -> ServiceAccountOrm:
+        return ServiceAccountOrm(
+            id=service_account.id,
+            created_at=service_account.created_at,
+            updated_at=service_account.updated_at,
+            deleted_at=service_account.deleted_at,
+            name=service_account.name,
+            client_id=service_account.client_id,
+            client_secret_hash=SecretHash(service_account.client_secret_hash),
+            organization_id=service_account.organization_id,
+            roles=set(service_account.roles),
+            is_active=service_account.is_active,
         )
 
 

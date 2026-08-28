@@ -1,15 +1,10 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, status
 
-from src.iam.application.dtos import UserResponse, UserUpdate
-from src.iam.dependencies import (
-    CurrentIdentity,
-    UserCrudDep,
-    UserRepositoryDep,
-    get_current_identity,
-    get_current_user,
-    get_user_list,
-    get_user_or_404,
-)
+from src.iam.application.dtos import UpdateUserDTO, UserResponse
+from src.iam.dependencies import CurrentIdentity, get_current_identity
+from src.iam.dependencies.crud import UserCrudDep, get_current_user, get_users_list
 from src.shared.application.dtos import Page
 
 router = APIRouter(prefix="/users", tags=["Пользователи | Users"])
@@ -31,11 +26,10 @@ async def get_me(user: UserResponse = Depends(get_current_user)) -> UserResponse
 )
 async def update_me(
         identity: CurrentIdentity,
-        dto: UserUpdate,
+        dto: UpdateUserDTO,
         crud: UserCrudDep,
-        user_repo: UserRepositoryDep,
 ) -> UserResponse:
-    return crud.update(identity.id, dto, user_repo)
+    return crud.update(identity.id, dto)
 
 
 @router.get(
@@ -44,7 +38,7 @@ async def update_me(
     dependencies=[get_current_identity],
     summary="Получить список пользователей",
 )
-async def get_users(users: Page[UserResponse] = Depends(get_user_list)) -> Page[UserResponse]:
+async def get_users(users: Page[UserResponse] = Depends(get_users_list)) -> Page[UserResponse]:
     return users
 
 
@@ -54,5 +48,5 @@ async def get_users(users: Page[UserResponse] = Depends(get_user_list)) -> Page[
     dependencies=[Depends(get_current_identity)],
     summary="Получить конкретного пользователя",
 )
-async def get_user(user: UserResponse = Depends(get_user_or_404)) -> UserResponse:
-    return user
+async def get_user(user_id: UUID, crud: UserCrudDep) -> UserResponse:
+    return await crud.read(user_id)
