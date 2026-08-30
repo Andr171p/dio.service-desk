@@ -61,8 +61,6 @@ def create_tokens_for_user(
 ) -> TokensResponse:
     """Выпуск пары токенов для пользователя."""
 
-    permissions = {permission for role in roles for permission in role.permissions}
-
     access_token = create_access_token(
         identity_id=user.id,
         identity_type=IdentityType.USER,
@@ -70,7 +68,7 @@ def create_tokens_for_user(
         membership_id=membership.id,
         organization_id=membership.organization_id,
         roles={role.code for role in roles},
-        permissions=permissions,
+        grants={grant for role in roles for grant in role.permissions},
     )
     refresh_token = create_refresh_token(user_id=user.id, membership_id=membership.id)
 

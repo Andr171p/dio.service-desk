@@ -5,15 +5,16 @@ from collections.abc import Callable
 from fastapi import Depends
 
 from src.iam.application.dtos import Identity, PermissionQueryParamFilters, PermissionResponse
+from src.iam.domain.entities import Permission
 from src.iam.domain.exceptions import PermissionDeniedError
 from src.shared.application.dtos import Page
 from src.shared.dependencies import PaginationDep
 
-from .repos import PermissionRepositoryDep
 from .identity import CurrentIdentity
+from .repos import PermissionRepositoryDep
 
 
-async def get_permission_list(
+async def get_permissions_list(
         permission_repo: PermissionRepositoryDep,
         pagination: PaginationDep,
         filters: Annotated[PermissionQueryParamFilters, Depends()],
@@ -22,7 +23,12 @@ async def get_permission_list(
     return permission_page.to_response(PermissionResponse.model_validate)
 
 
-def require_permissions(*permissions: str, any_of: bool = True) -> Callable[[Identity], Identity]:
+permissions_list_depends = Depends(get_permissions_list)
+
+
+def require_permissions(
+        *permissions: Permission, any_of: bool = True,
+) -> Callable[[Identity], Identity]:
     """
     Создаёт FastAPI dependency для проверки permissions текущего Identity.
 

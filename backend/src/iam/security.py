@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import secrets
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from uuid import UUID, uuid4
@@ -16,7 +17,7 @@ from src.core.settings import settings
 from src.iam.application.dtos import IdentityType
 from src.iam.consts import CLIENT_ID_BYTES_LENGTH, CLIENT_SECRET_BYTES_LENGTH
 from src.iam.domain.exceptions import UnauthorizedError, WeakPasswordError
-from src.iam.domain.vo import Email
+from src.iam.domain.vo import Email, PermissionGrant
 from src.shared.utils.time import current_datetime
 
 MEMORY_COST = 100
@@ -104,7 +105,7 @@ def create_access_token(
         identity_type: IdentityType,
         organization_id: UUID,
         roles: set[str],
-        permissions: set[str],
+        grants: Sequence[PermissionGrant],
         email: Email | None = None,
         membership_id: UUID | None = None,
 ) -> str:
@@ -124,7 +125,7 @@ def create_access_token(
         "idt": identity_type.name.lower(),
         "org_id": str(organization_id),
         "roles": list(roles),
-        "perms": list(permissions),
+        "grants": [grant.code for grant in set(grants)],
     }
 
     # Специфичные для пользователя поля

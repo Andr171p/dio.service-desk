@@ -15,12 +15,10 @@ from src.iam.domain.entities import Permission
 from src.iam.domain.scopes import PermissionScope
 
 register_permission(
-    Permission(
-        resource="tickets",
-        action="create",
-        scope=PermissionScope.ORGANIZATION,
-        description="Создание заявок",
-    )
+    resource="tickets",
+    action="create",
+    scope=PermissionScope.ORGANIZATION,
+    description="Создание заявок"
 )
 ```
 
@@ -57,8 +55,22 @@ from src.iam.domain.entities import Permission
 _permission_registry: dict[str, Permission] = {}
 
 
-def register_permission(permission: Permission) -> Permission:
+def register_permission(
+        resource: str,
+        action: str,
+        scopes: tuple[str, ...],
+        title: str,
+        description: str | None = None,
+) -> Permission:
     """Зарегистрировать системное разрешение."""
+
+    permission = Permission(
+        resource=resource,
+        action=action,
+        scopes=frozenset(scopes),
+        title=title,
+        description=description,
+    )
 
     if permission.code in _permission_registry:
         raise ValueError(f"Permission already registered: {permission.code}.")

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from src.iam.domain.vo import Email
+from src.iam.domain.vo import Email, PermissionGrant
 
 
 class IdentityType(IntEnum):
@@ -27,7 +27,7 @@ class Identity:
     membership_id: UUID | None = None
 
     roles: frozenset[str] = field(default_factory=frozenset)
-    permissions: frozenset[str] = field(default_factory=frozenset)
+    grants: frozenset[PermissionGrant] = field(default_factory=frozenset)
 
 
 class IdentityResponse(BaseModel):

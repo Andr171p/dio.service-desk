@@ -33,6 +33,10 @@ class PermissionGrant:
     permission: str
     scope: PermissionScope
 
+    @property
+    def code(self) -> str:
+        return f"{self.permission}:{self.scope.value}"
+
 
 @dataclass(frozen=True, slots=True)
 class FullName(ValueObject):

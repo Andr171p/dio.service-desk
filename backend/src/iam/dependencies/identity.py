@@ -9,7 +9,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.iam.application.dtos import Identity, IdentityType
 from src.iam.application.services import blacklist
 from src.iam.domain.exceptions import UnauthorizedError
-from src.iam.domain.vo import Email
+from src.iam.domain.vo import Email, PermissionGrant, PermissionScope
 from src.iam.security import decode_token
 from src.shared.infra.cache import Cache
 
@@ -32,17 +32,26 @@ def _require_claim[T](payload: dict[str, Any], field: str, expected_type: Callab
         raise UnauthorizedError(f"Invalid claim '{field}' value.") from None
 
 
+def _parse_grant(grant: str) -> PermissionGrant:
+    try:
+        permission, scope = grant.split(":", maxsplit=1)
+        return PermissionGrant(permission=permission, scope=PermissionScope(scope))
+    except (ValueError, TypeError):
+        raise UnauthorizedError(f"Invalid permission grant: {grant!r}.") from None
+
+
 def _build_identity_from_payload(payload: dict[str, Any]) -> Identity:
     """Выполняет парсинг JWT payload и валидирует claims."""
 
     identity_type = _require_claim(payload, "idt", IdentityType)
+    grants = _require_claim(payload, "grants", list)
 
     common = {
         "id": _require_claim(payload, "sub", UUID),
         "type": identity_type,
         "organization_id": _require_claim(payload, "org_id", UUID),
         "roles": _require_claim(payload, "roles", frozenset),
-        "permissions": _require_claim(payload, "perms", frozenset),
+        "grants": frozenset({_parse_grant(grant) for grant in grants}),
     }
 
     match identity_type:
