@@ -3,7 +3,7 @@ from uuid import UUID
 from src.iam.domain.entities import Invitation, Membership, Permission, Role, ServiceAccount, User
 from src.iam.domain.vo import Email
 from src.shared.application.dtos import Page, Pagination
-from src.shared.domain.repos import Repository
+from src.shared.application.repos import Repository
 
 from .dtos import PermissionQueryParamFilters
 

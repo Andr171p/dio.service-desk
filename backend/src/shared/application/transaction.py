@@ -21,9 +21,15 @@ class Transaction:
         for entity in entities:
             events.extend(entity.collect_events())
 
-        if self._recorder is not None:
-            await self._recorder.record_all(events)
+        try:
+            if self._recorder is not None and events:
+                await self._recorder.record_all(events)
 
-        await self._uow.commit()
+            await self._uow.commit()
 
-        await self._publisher.publish_all(events)
+        except Exception:
+            await self._uow.rollback()
+            raise
+
+        if events:
+            await self._publisher.publish_all(events)

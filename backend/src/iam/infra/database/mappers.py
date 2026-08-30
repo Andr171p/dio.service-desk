@@ -60,6 +60,7 @@ class ServiceAccountMapper(ModelMapper[ServiceAccount, ServiceAccountOrm]):
             updated_at=model.updated_at,
             deleted_at=model.deleted_at,
             name=model.name,
+            description=model.description,
             client_id=model.client_id,
             client_secret_hash=SecretHash(model.client_secret_hash),
             organization_id=model.organization_id,
@@ -75,6 +76,7 @@ class ServiceAccountMapper(ModelMapper[ServiceAccount, ServiceAccountOrm]):
             updated_at=service_account.updated_at,
             deleted_at=service_account.deleted_at,
             name=service_account.name,
+            description=service_account.description,
             client_id=service_account.client_id,
             client_secret_hash=SecretHash(service_account.client_secret_hash),
             organization_id=service_account.organization_id,
@@ -164,6 +166,8 @@ class RoleMapper(ModelMapper[Role, RoleOrm]):
                 for grant in model.permissions
             },
             is_default=model.is_default,
+            author_id=model.author_id,
+            organization_id=model.organization_id,
         )
 
     @staticmethod
@@ -181,6 +185,8 @@ class RoleMapper(ModelMapper[Role, RoleOrm]):
                 for grant in role.permissions
             ],
             is_default=role.is_default,
+            author_id=role.author_id,
+            organization_id=role.organization_id,
         )
 
 

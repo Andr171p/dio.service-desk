@@ -9,9 +9,16 @@ router = APIRouter(prefix="/invitations", tags=["Приглашения | Invita
 
 
 @router.post(
+    path="",
+    status_code=status.HTTP_201_CREATED,
+    summary="Пригласить пользователя",
+)
+async def create_invitations(): ...
+
+
+@router.post(
     path="/accept",
     status_code=status.HTTP_201_CREATED,
-    response_model=TokensResponse,
     summary="Принять приглашение",
     description="Один из способов регистрации."
 )

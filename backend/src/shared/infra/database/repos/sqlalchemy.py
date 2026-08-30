@@ -115,12 +115,46 @@ class SqlAlchemyRepository[EntityT: Entity, ModelT: Base]:
         model = result.scalar_one_or_none()
         return None if model is None else self.model_mapper.from_model(model)
 
+    def _apply_filters[FiltersT: BaseQueryParamFilters](
+        self,
+        stmt: Select[tuple[ModelT]],
+        filters: FiltersT,
+    ) -> Select[tuple[ModelT]]:
+        """
+        Применяет базовые и специфичные фильтры запроса.
+
+        Базовая реализация поддерживает фильтрацию по идентификаторам
+        и полнотекстовый поиск. Для добавления фильтров конкретной модели
+        переопределить метод в дочернем репозитории.
+        """
+
+        if filters.ids:
+            stmt = stmt.where(self.model.id.in_(filters.ids))
+
+        if filters.search:
+            stmt = self._apply_search(stmt, filters.search)
+
+        return stmt
+
+    def _apply_search(self, stmt: Select[tuple[ModelT]], search: str) -> Select[tuple[ModelT]]:  # noqa: ARG002, PLR6301
+        """
+        Применяет полнотекстовый поиск по модели.
+
+        Базовая реализация не изменяет запрос. Переопределить в дочернем
+        репозитории для определения полей, по которым выполняется поиск.
+        """
+
+        return stmt
+
     async def find[FiltersT: BaseQueryParamFilters](
             self, pagination: Pagination, filters: FiltersT | None = None,
     ) -> Page[EntityT]:
         """Для расширения логики фильтрации можно переопределить в дочерних классах."""
 
         stmt = select(self.model)
+
+        if filters:
+            stmt = self._apply_filters(stmt, filters)
 
         return await paginate(
             session=self._session,

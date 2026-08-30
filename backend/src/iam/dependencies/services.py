@@ -2,8 +2,13 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.iam.application.services import AuthService, OAuthService, RegistrationService
-from src.shared.dependencies import TransactionDep
+from src.iam.application.services import (
+    AuthService,
+    ClientCredentialsService,
+    OAuthService,
+    RegistrationService,
+)
+from src.shared.dependencies import DBSession, TransactionDep
 
 from .repos import (
     CacheDep,
@@ -54,6 +59,24 @@ def get_registration_service(
     )
 
 
+def get_client_credentials_service(
+        uow: DBSession,
+        organization_repo: ...,
+        service_account_repo: ServiceAccountRepositoryDep,
+        role_repo: RoleRepositoryDep,
+) -> ClientCredentialsService:
+    return ClientCredentialsService(
+        uow=uow,
+        organization_repo=organization_repo,
+        service_account_repo=service_account_repo,
+        role_repo=role_repo,
+    )
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 OAuthServiceDep = Annotated[OAuthService, Depends(get_oauth_service)]
 RegistrationServiceDep = Annotated[RegistrationService, Depends(get_registration_service)]
+ClientCredentialsServiceDep = Annotated[
+    ClientCredentialsService,
+    Depends(get_client_credentials_service),
+]

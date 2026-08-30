@@ -3,6 +3,7 @@ from typing import Any
 import asyncio
 import logging
 import os
+import secrets
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from uuid import UUID, uuid4
@@ -13,6 +14,7 @@ from passlib.context import CryptContext
 
 from src.core.settings import settings
 from src.iam.application.dtos import IdentityType
+from src.iam.consts import CLIENT_ID_BYTES_LENGTH, CLIENT_SECRET_BYTES_LENGTH
 from src.iam.domain.exceptions import UnauthorizedError, WeakPasswordError
 from src.iam.domain.vo import Email
 from src.shared.utils.time import current_datetime
@@ -191,3 +193,15 @@ def validate_password_strength(
         ] if result.feedback.suggestions else []
 
         raise WeakPasswordError("Password is too weak.", suggestions=suggestions, warning=warning)
+
+
+def generate_client_id() -> str:
+    """Генерирует публичный идентификатор сервисного аккаунта."""
+
+    return secrets.token_urlsafe(CLIENT_ID_BYTES_LENGTH)
+
+
+def generate_client_secret() -> str:
+    """Генерирует криптографически стойкий client secret."""
+
+    return secrets.token_urlsafe(CLIENT_SECRET_BYTES_LENGTH)

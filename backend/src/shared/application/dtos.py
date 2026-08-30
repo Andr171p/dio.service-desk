@@ -3,6 +3,7 @@ from typing import Any, Literal, Self
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 
@@ -75,8 +76,14 @@ class Page[T: Any](BaseModel):
 class BaseQueryParamFilters(BaseModel):
     """Базовая схема для query param фильтров."""
 
-    op: Literal["and", "or"] = Field("and", description="логический оператор для связи фильтров.")
-    sort: str | None = Field(
-        None, description="Поле и направление сортировки.", examples=["created_at:desc", "-id"],
+    op: Literal["and", "or"] = Field(
+        default="and",
+        description="Логический оператор для связи фильтров.",
     )
-    search: str | None = Field(None, description="Полнотекстовый поиск.")
+    sort: str | None = Field(
+        default=None,
+        description="Поле и направление сортировки.",
+        examples=["created_at:desc", "-id"],
+    )
+    search: str | None = Field(default=None, description="Полнотекстовый поиск.")
+    ids: set[UUID] | None = Field(default=None, description="PK идентификаторы сущностей.")

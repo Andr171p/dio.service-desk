@@ -24,6 +24,7 @@ async def create_handler(dto: CreateRoleDTO, identity: Identity) -> Role:
         description=dto.description,
         permissions=dto.permissions,
         author_id=identity.id,
+        organization_id=identity.organization_id,
     )
 
 

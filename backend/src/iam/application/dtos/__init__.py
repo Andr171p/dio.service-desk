@@ -15,10 +15,18 @@ from .roles import (
     RoleResponse,
     UpdateRoleDTO,
 )
+from .service_account import (
+    ClientCredentials,
+    CreateServiceAccountDTO,
+    ServiceAccountResponse,
+    UpdateServiceAccountDTO,
+)
 from .users import CreateUserDTO, UpdateUserDTO, UserQueryParamFilters, UserResponse
 
 __all__ = [
+    "ClientCredentials",
     "CreateRoleDTO",
+    "CreateServiceAccountDTO",
     "CreateUserDTO",
     "Identity",
     "IdentityResponse",
@@ -31,9 +39,11 @@ __all__ = [
     "PermissionQueryParamFilters",
     "PermissionResponse",
     "RoleResponse",
+    "ServiceAccountResponse",
     "TokenRequest",
     "TokensResponse",
     "UpdateRoleDTO",
+    "UpdateServiceAccountDTO",
     "UpdateUserDTO",
     "UserCredentials",
     "UserQueryParamFilters",

@@ -12,6 +12,7 @@ from src.iam.application.dtos import (
 from src.iam.dependencies.identity import CurrentIdentity
 from src.iam.dependencies.repos import UserRepositoryDep
 from src.iam.domain.entities import User
+from src.iam.domain.vo import FullName, Username
 from src.shared.application.crud import Crud
 from src.shared.application.dtos import Page
 from src.shared.application.repos import get_or_raise_404
@@ -28,7 +29,9 @@ UserCrud = Crud[
 
 
 async def update_handler(user: User, dto: UpdateUserDTO, options: Any | None = None) -> User:
-    return apply_changes(user, **dto.model_dump())
+    full_name = FullName(dto.full_name) if dto.full_name else None
+    username = Username(dto.username) if dto.username else None
+    return apply_changes(user, full_name=full_name, username=username, avatar_url=dto.avatar_url)
 
 
 def get_user_crud(transaction: TransactionDep, user_repository: UserRepositoryDep) -> UserCrud:
@@ -60,3 +63,5 @@ async def get_users_list(
 
 
 UserCrudDep = Annotated[UserCrud, Depends(get_user_crud)]
+current_user_depends = Depends(get_current_user)
+users_list_depends = Depends(get_users_list)

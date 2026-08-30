@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, HttpUrl, NonNegativeFloat, NonNegativeInt
+from pydantic import Field, HttpUrl, NonNegativeFloat, NonNegativeInt
+from pydantic_settings import BaseSettings
 
 
-class SrvBaseConfig(BaseModel):
+class SrvBaseConfig(BaseSettings):
     base_url: HttpUrl = Field(
         description="Базовый URL адрес без слешей.",
         examples=["http://some-service.example"],
@@ -9,7 +10,7 @@ class SrvBaseConfig(BaseModel):
     timeout: NonNegativeFloat = Field(default=300.0, description="Таймаут в миллисекундах.")
     keepalive_timeout: NonNegativeFloat = Field(
         default=30.0,
-        description="Время жизни простаивающего соединения."
+        description="Время жизни простаивающего соединения.",
     )
 
     client_id: str

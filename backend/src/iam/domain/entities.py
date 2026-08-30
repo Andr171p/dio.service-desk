@@ -86,6 +86,7 @@ class ServiceAccount(Entity):
     """
 
     name: str
+    description: str | None = None
 
     client_id: str
     client_secret_hash: SecretHash
@@ -221,7 +222,9 @@ class Role(Entity):
 
     permissions: set[PermissionGrant]
     is_default: Annotated[bool, Doc("Является ли роль системной")] = False
+
     author_id: UUID | None = None
+    organization_id: UUID | None = None
 
     def update(
             self,

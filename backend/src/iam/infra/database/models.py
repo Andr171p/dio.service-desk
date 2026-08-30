@@ -37,6 +37,7 @@ class ServiceAccountOrm(Base):
     __tablename__ = "service_accounts"
 
     name: Mapped[str]
+    description: Mapped[TextNull]
 
     client_id: Mapped[StrUnique]
     client_secret_hash: Mapped[str]
@@ -94,6 +95,9 @@ class RoleOrm(Base):
 
     permissions: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
     is_default: Mapped[bool]
+
+    author_id: Mapped[UUID | None] = mapped_column(nullable=True)
+    organization_id: Mapped[UUID | None] = mapped_column(nullable=True)
 
 
 class InvitationOrm(Base):

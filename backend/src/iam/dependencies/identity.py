@@ -3,7 +3,7 @@ from typing import Annotated, Any
 from collections.abc import Callable
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.iam.application.dtos import Identity, IdentityType
@@ -77,4 +77,5 @@ async def get_current_identity(
     return _build_identity_from_payload(payload)
 
 
+require_authentication = Security(get_current_identity)
 CurrentIdentity = Annotated[Identity, Depends(get_current_identity)]
