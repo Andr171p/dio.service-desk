@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,8 @@ from src.iam.domain.vo import Email, PermissionGrant, PermissionScope, SecretHas
 from src.iam.infra.database.repos import SqlMembershipRepository, SqlRoleRepository, SqlUserRepository
 from src.iam.security import hash_password_async
 
+logger = logging.getLogger(__name__)
+
 _SUPER_ADMIN_ROLE_NAME = "Супер администратор"
 _SUPER_ADMIN_ROLE_CODE = "super_admin"
 
@@ -20,8 +23,11 @@ async def _get_or_create_master_organization(session: AsyncSession) -> Organizat
 async def _get_or_create_super_admin_role(session: AsyncSession) -> Role:
     repository = SqlRoleRepository(session)
 
+    logger.info("Checking super admin role: code=%s", _SUPER_ADMIN_ROLE_CODE)
+
     role = await repository.get_by_code(_SUPER_ADMIN_ROLE_CODE)
     if role is not None:
+        logger.info("Super admin role already exists")
         return role
 
     grants = {
@@ -30,6 +36,8 @@ async def _get_or_create_super_admin_role(session: AsyncSession) -> Role:
         if PermissionScope.GLOBAL in permission.scopes
     }
 
+    logger.info("Creating super admin role with %d global permission grants", len(grants))
+
     role = Role(
         name=_SUPER_ADMIN_ROLE_NAME,
         code=_SUPER_ADMIN_ROLE_CODE,
@@ -37,7 +45,15 @@ async def _get_or_create_super_admin_role(session: AsyncSession) -> Role:
         permissions=grants,
         is_default=True,
     )
-    return await repository.create(role)
+
+    created = await repository.create(role)
+    logger.info(
+        "Super admin role created: code=%s, grants=%d, createdAt=%s",
+        _SUPER_ADMIN_ROLE_CODE,
+        len(grants),
+        created.created_at,
+    )
+    return created
 
 
 async def _get_or_create_user(
@@ -51,8 +67,13 @@ async def _get_or_create_user(
     email = Email(email)
     username = Username(username) if username else None
 
+    logger.info("Checking super admin user: email=%s", email.value)
+
     if (user := await repository.get_by_email(email)) is not None:
+        logger.info("Super admin user already exists: id=%s, email=%s", user.id, email.value)
         return user
+
+    logger.info("Creating super admin user: email=%s", email.value, )
 
     password_hash = await hash_password_async(password)
     user = User(
@@ -60,7 +81,14 @@ async def _get_or_create_user(
         password_hash=SecretHash(password_hash),
         username=username,
     )
-    return await repository.create(user)
+    created = await repository.create(user)
+    logger.info(
+        "Super admin user created: id=%s, email=%s, createdAt=%s",
+        user.id,
+        email.value,
+        created.created_at,
+    )
+    return created
 
 
 async def _get_or_create_membership(
@@ -93,7 +121,7 @@ async def main() -> None:
             password=...,
             username=...,
         )
-        membership = await _get_or_create_membership(
+        _ = await _get_or_create_membership(
             session,
             user_id=user.id,
             organization_id=organization.id,

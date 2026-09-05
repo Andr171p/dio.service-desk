@@ -3,26 +3,24 @@ import asyncio
 import logging
 import sys
 
-from .commands import create_first_admin, init_s3_buckets
+from .commands import create_super_admin, create_s3_buckets
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="CLI утилиты для diocon-tickets")
+    parser = argparse.ArgumentParser(description="CLI Bootstrap utilities.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Команда `create_handler-first-admin`
-    subparsers.add_parser(
-        "create_handler-first-admin", help="Создать первого администратора"
-    )
-    # Команда `init-s3-storage`
-    subparsers.add_parser("init-s3-buckets", help="Инициализация S3 хранилища")
+    subparsers.add_parser("create-super-admin", help="Создать супер администратора")
+    subparsers.add_parser("create-s3-buckets", help="Инициализация S3 хранилища")
 
     args = parser.parse_args()
 
-    if args.command == "create_handler-first-admin":
-        asyncio.run(create_first_admin())
-    elif args.command == "init-s3-buckets":
-        asyncio.run(init_s3_buckets())
+    if args.command == "create-super-admin":
+        asyncio.run(create_super_admin.main())
+
+    elif args.command == "create-s3-buckets":
+        asyncio.run(create_s3_buckets.main())
+
     else:
         parser.print_help()
         sys.exit(1)
