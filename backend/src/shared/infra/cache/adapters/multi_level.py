@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 
-from .base import Cache
+from src.shared.infra.cache.base import Cache
 
 logger = logging.getLogger(__name__)
 

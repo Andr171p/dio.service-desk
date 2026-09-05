@@ -1,8 +1,9 @@
 [project]
 name = "backend"
 version = "0.1.0"
-description = "Add your description here"
+description = "Backend application"
 requires-python = ">=3.13"
+
 dependencies = [
     "aiobotocore>=3.3.0",
     "aiosmtplib>=5.1.0",
@@ -11,39 +12,63 @@ dependencies = [
     "anyio>=4.12.1",
     "argon2-cffi>=25.1.0",
     "asyncpg>=0.31.0",
-    "faker>=40.11.1",
     "fastapi[all]>=0.135.1",
     "faststream[rabbit]>=0.6.7",
-    "freezegun>=1.5.5",
     "html2text>=2025.4.15",
     "langchain>=1.2.14",
     "langchain-openai>=1.1.12",
     "langchain-text-splitters>=1.1.2",
     "language-tool-python>=3.3.0",
     "mistune>=3.2.1",
-    "mypy>=1.19.1",
     "passlib>=1.7.4",
     "pgvector>=0.4.2",
     "prometheus-fastapi-instrumentator>=7.1.0",
     "pyjwt>=2.12.1",
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.1.0",
-    "pytest-mock>=3.15.1",
     "python-json-logger>=4.1.0",
     "pytz>=2026.1.post1",
     "redis>=7.4.0",
     "sqlalchemy>=2.0.48",
     "sse-starlette>=3.4.4",
     "taskiq>=0.12.4",
-    "testcontainers[minio,postgres]>=4.14.2",
     "unidecode>=1.4.0",
     "zxcvbn-rs-py>=0.3.0",
 ]
 
+
+[dependency-groups]
+dev = [
+    { include-group = "lint" },
+    { include-group = "types" },
+    { include-group = "test" },
+]
+
+lint = [
+    "ruff>=0.15.7",
+]
+
+types = [
+    "mypy>=1.19.1",
+]
+
+test = [
+    "faker>=40.11.1",
+    "freezegun>=1.5.5",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "testcontainers[minio,postgres]>=4.14.2",
+]
+
+
+# ---------------------------------------------------------------------------
+# Ruff
+# ---------------------------------------------------------------------------
+
 [tool.ruff]
+target-version = "py313"
 line-length = 99
-preview = true
+
 extend-exclude = [
     "cli",
     "migrations",
@@ -53,88 +78,67 @@ extend-exclude = [
     "**/__pycache__",
     "**/.mypy_cache",
     "**/.ruff_cache",
-    "**/.venv"
+    "**/.venv",
 ]
 
 [tool.ruff.lint]
 select = [
-    "F",
-    "E",
+    "F",      # Pyflakes
+    "E",      # pycodestyle
     "W",
-    "C90",
-    "I",
-    "N",
-    "UP",
-    "YTT",
-    "ASYNC",
-    "S",
-    "BLE",
-    "B",
-    "A",
-    "COM",
-    "C4",
-    "DTZ",
-    "T10",
-    "EXE",
-    "ISC",
-    "ICN",
-    "G",
-    "INP",
-    "PIE",
-    "T20",
-    "PYI",
-    "PT",
-    "Q",
-    "RSE",
-    "RET",
-    "SLF",
-    "SLOT",
-    "SIM",
-    "TID",
-    "INT",
-    "ARG",
-    "TD",
-    "FIX",
-    "ERA",
-    "PD",
-    "PGH",
-    "PL",
-    "TRY",
-    "FLY",
-    "NPY",
-    "AIR",
-    "PERF",
-    "FURB",
-    "LOG",
-    "RUF",
+    "C90",    # mccabe
+    "I",      # isort
+    "N",      # naming
+    "UP",     # pyupgrade
+    "ASYNC",  # async correctness
+    "FAST",   # FastAPI
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "PIE",    # flake8-pie
+    "RET",    # return statements
+    "SIM",    # simplification
+    "ARG",    # unused arguments
+    "PL",     # pylint
+    "PERF",   # performance
+    "RUF",    # Ruff
+    "LOG",    # logging
 ]
+
 ignore = [
-    "S105",
+    # pytest / testing
     "S101",
-    "B008",
-    "B024",
-    "TRY201",
-    "PLW3201",
-    "PLW1641",
-    "N805",
-    "PTH",
-    "COM812",
-    "ISC001",
-    "TRY003",
-    "PT013",
+
+    # Sometimes useful in framework/application code
+    "ARG001",
+
+    # Python allows this and it is often useful in adapters
+    "PLC0415",
+
+    # Relative imports are sometimes useful inside modules
     "TID252",
+
+    # Unicode is valid and common in Russian comments/docstrings
     "RUF001",
     "RUF002",
     "RUF003",
-    "RUF067",
+
+    # Async functions without timeout are sometimes legitimate
     "ASYNC109",
-    "PLC0415",
+
+    # Existing project conventions
+    "N805",
+    "PLW3201",
+    "PLW1641",
+
+    # Too opinionated for this codebase
+    "TRY003",
 ]
+
 
 [tool.ruff.lint.isort]
 section-order = [
     "future",
-    "typings",
+    "typing",
     "standard-library",
     "third-party",
     "first-party",
@@ -142,7 +146,8 @@ section-order = [
 ]
 
 [tool.ruff.lint.isort.sections]
-"typings" = ['typing']
+"typing" = ["typing"]
+
 
 [tool.ruff.lint.pylint]
 max-args = 15
@@ -151,47 +156,91 @@ max-branches = 30
 
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "D", "ARG001", "F401", "PLR6301"]
-"migrations/*" = ["S101", "D", "ARG001", "F401", "PLR6301", "I001", "ERA001"]
-"**/*crud.py" = ["RUF029", "ARG001"]
-"**/crud/**/*.py" = ["RUF029", "ARG001"]
+"tests/**/*" = [
+    "S101",
+    "ARG001",
+    "F401",
+    "PLR6301",
+]
 
-# -- MyPy --
+"migrations/**/*" = [
+    "S101",
+    "ARG001",
+    "F401",
+    "PLR6301",
+    "I001",
+    "ERA001",
+]
+
+"**/*crud.py" = [
+    "RUF029",
+    "ARG001",
+]
+
+"**/crud/**/*.py" = [
+    "RUF029",
+    "ARG001",
+]
+
+
+# ---------------------------------------------------------------------------
+# Ruff formatter
+# ---------------------------------------------------------------------------
+
+[tool.ruff.format]
+line-ending = "lf"
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+
+
+# ---------------------------------------------------------------------------
+# MyPy
+# ---------------------------------------------------------------------------
+
 [tool.mypy]
+python_version = "3.13"
 ignore_missing_imports = true
+
 exclude = [
     "src/migration",
     "src/migrations",
     "__samples__",
-    ".venv"
+    ".venv",
 ]
 
-# -- Vulture --
+
+# ---------------------------------------------------------------------------
+# Vulture
+# ---------------------------------------------------------------------------
+
 [tool.vulture]
 exclude = [
     ".vscode/",
     "__samples__/",
-    "tests",
-    ".venv"
+    "tests/",
+    ".venv/",
 ]
+
 ignore_names = [
     "post",
     "put",
     "delete",
-    "head"
+    "head",
 ]
 
-# --- Pytest ---
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+testpaths = ["tests"]
+
 markers = [
     "unit: быстрые unit-тесты для доменной логики",
     "integration: тесты с использованием инфраструктуры",
-    "e2e: end-to-end сценарии"
-]
-testpaths = ["tests"]
-
-[dependency-groups]
-dev = [
-    "ruff>=0.15.7",
+    "e2e: end-to-end сценарии",
 ]

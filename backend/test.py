@@ -1,15 +1,6 @@
-from src.iam.application.dtos import PermissionResponse
-from src.iam.domain.entities import Permission
-from src.iam.domain.vo import PermissionScope
+data = {
+    "_id": "12345",
+    "meta": {"a": 1, "b": 2},
+}
 
-perm = Permission(
-    resource="task",
-    action="create",
-    title="Создать задачу",
-    description="Что то там ...",
-    scopes=frozenset({PermissionScope.ORGANIZATION, PermissionScope.PROJECT}),
-)
-
-print(perm)
-
-print(PermissionResponse.model_validate(perm))
+mongo_filter = {"_id": "12345"}

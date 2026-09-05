@@ -28,7 +28,7 @@ class CachedRepository[EntityT: Entity](RepositoryDecorator[EntityT]):
     async def read(self, uid: UUID) -> EntityT | None:
         key = build_key(self.prefix, uid)
 
-        if entity := await self.cache.get(key) is not None:
+        if (entity := await self.cache.get(key)) is not None:
             return entity
 
         entity = await self._repo.read(uid)

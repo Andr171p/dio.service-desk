@@ -4,10 +4,10 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.iam.domain.vo import PermissionGrant, PermissionScope
-from src.shared.application.dtos import BaseQueryParamFilters
+from src.shared.application.dtos import BaseQueryFilters
 
 
-class PermissionQueryParamFilters(BaseQueryParamFilters):
+class PermissionQueryParamFilters(BaseQueryFilters):
     """Фильтры для получения списка прав."""
 
     resource: str | None = None

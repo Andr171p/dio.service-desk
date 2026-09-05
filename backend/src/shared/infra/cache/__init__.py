@@ -34,9 +34,9 @@ Design principles
 """
 
 from .base import Cache
-from .in_memory import InMemoryCache
-from .multi_level import MultiLevelCache
-from .redis import PrimitiveSerializer, RedisCache, Serializer
+from src.shared.infra.cache.adapters.in_memory import InMemoryCache
+from src.shared.infra.cache.adapters.multi_level import MultiLevelCache
+from src.shared.infra.cache.adapters.redis import PrimitiveSerializer, RedisCache, Serializer
 
 __all__ = [
     "Cache",

@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
-from src.shared.infra.database.types import (
+from src.shared.infra.database.postgres.types import (
     DatatimeTz,
     DatetimeNull,
     StrNull,

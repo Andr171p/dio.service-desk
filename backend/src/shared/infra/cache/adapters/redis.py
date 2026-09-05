@@ -5,7 +5,7 @@ import uuid
 
 from redis.asyncio import Redis
 
-from .base import Cache
+from src.shared.infra.cache.base import Cache
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,8 @@ class PrimitiveSerializer[T]:
     def __init__(self, cast_type: type[T]) -> None:
         self._cast_type = cast_type
 
-    def dumps(self, value: T) -> bytes:
+    @staticmethod
+    def dumps(value: T) -> bytes:
         if isinstance(value, bytes):
             return value
 

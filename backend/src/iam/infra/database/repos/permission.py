@@ -9,7 +9,7 @@ from src.iam.domain.entities import Permission
 from src.iam.infra.database.mappers import PermissionMapper
 from src.iam.infra.database.models import PermissionOrm
 from src.shared.application.dtos import Page, Pagination
-from src.shared.infra.database.repos.sqlalchemy import paginate
+from src.shared.infra.database.postgres.repository import paginate
 
 
 def apply_permission_query_param_filters(

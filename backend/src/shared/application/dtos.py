@@ -1,27 +1,25 @@
-from typing import Any, Literal, Self
+from typing import Annotated, Any, Self
 
 from collections.abc import Callable
-from dataclasses import dataclass
-from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 
-
-@dataclass(frozen=True)
-class TimeRangeFilters:
-    """Фильтр по временным промежуткам."""
-
-    created_after: datetime | None = None
-    created_before: datetime | None = None
+from .dsl import Filter
 
 
 class Pagination(BaseModel):
     """Параметры пагинации, которые приходят от клиента (query config)."""
 
-    page: PositiveInt = Field(default=1, ge=1, description="Номер страницы, начинается с 1")
+    page: PositiveInt = Field(
+        default=1,
+        ge=1,
+        description="Номер страницы, начинается с 1",
+    )
     size: PositiveInt = Field(
-        default=10, ge=1, le=100, description="Размер страницы (количество элементов на странице)."
+        default=10,
+        ge=1,
+        le=100,
+        description="Размер страницы (количество элементов на странице)."
     )
 
     @property
@@ -34,12 +32,12 @@ class Pagination(BaseModel):
 class Page[T: Any](BaseModel):
     """Полная страница с элементами."""
 
-    page: PositiveInt = Field(..., description="Текущий номер страницы")
-    size: PositiveInt = Field(..., description="Количество элементов на странице")
-    total: NonNegativeInt = Field(..., description="Всего элементов на сервере")
-    pages: NonNegativeInt = Field(..., description="Всего страниц")
-    has_next: bool = Field(..., description="Есть ли следующая страница")
-    has_prev: bool = Field(..., description="Есть ли предыдущая страница")
+    page: PositiveInt = Field(description="Текущий номер страницы")
+    size: PositiveInt = Field(description="Количество элементов на странице")
+    total: NonNegativeInt = Field(description="Всего элементов на сервере")
+    pages: NonNegativeInt = Field(description="Всего страниц")
+    has_next: bool = Field(description="Есть ли следующая страница")
+    has_prev: bool = Field(description="Есть ли предыдущая страница")
     items: list[T] = Field(default_factory=list, description="Полученные элементы")
 
     @classmethod
@@ -73,17 +71,4 @@ class Page[T: Any](BaseModel):
         )
 
 
-class BaseQueryParamFilters(BaseModel):
-    """Базовая схема для query param фильтров."""
-
-    op: Literal["and", "or"] = Field(
-        default="and",
-        description="Логический оператор для связи фильтров.",
-    )
-    sort: str | None = Field(
-        default=None,
-        description="Поле и направление сортировки.",
-        examples=["created_at:desc", "-id"],
-    )
-    search: str | None = Field(default=None, description="Полнотекстовый поиск.")
-    ids: set[UUID] | None = Field(default=None, description="PK идентификаторы сущностей.")
+QueryDTO = Annotated[Filter, Field(description="DTO для построения фильтров через DSL.")]

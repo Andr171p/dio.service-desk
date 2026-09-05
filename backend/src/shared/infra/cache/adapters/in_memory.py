@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import time
 
-from .base import Cache
+from src.shared.infra.cache.base import Cache
 
 
 class InMemoryCache[T](Cache[T]):
