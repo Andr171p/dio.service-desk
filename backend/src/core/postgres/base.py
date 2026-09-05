@@ -1,23 +1,9 @@
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, func
-from sqlalchemy.ext.asyncio import (
-    AsyncAttrs,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from .settings import settings
-
-engine = create_async_engine(url=settings.postgres.sqlalchemy_url, echo=True)
-sessionmaker = async_sessionmaker(
-    engine, class_=AsyncSession, autoflush=False, expire_on_commit=False
-)
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -37,9 +23,3 @@ class Base(AsyncAttrs, DeclarativeBase):
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None,
     )
-
-
-@asynccontextmanager
-async def session_factory() -> AsyncIterator[AsyncSession]:
-    async with sessionmaker() as session:
-        yield session
