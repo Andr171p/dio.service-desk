@@ -35,7 +35,7 @@ class TestUserMapper:
         assert entity.username == Username(model.username)
         assert entity.full_name == FullName(model.full_name)
         assert entity.avatar_url == model.avatar_url
-        assert entity.counterparty_id == model.counterparty_id
+        assert entity.organization_id == model.counterparty_id
         assert entity.role == model.role
         assert entity.password_hash.get_secret_value() == model.password_hash
         assert entity.is_active == model.is_active
@@ -58,7 +58,7 @@ class TestUserMapper:
         assert entity.username is None
         assert entity.full_name is None
         assert entity.avatar_url is None
-        assert entity.counterparty_id is None
+        assert entity.organization_id is None
 
     def test_from_entity(self):
         entity = User(
@@ -81,7 +81,7 @@ class TestUserMapper:
         assert model.username == entity.username.value
         assert model.full_name == entity.full_name.value
         assert model.avatar_url == entity.avatar_url
-        assert model.counterparty_id == entity.counterparty_id
+        assert model.organization_id == entity.counterparty_id
         assert model.role == entity.role
         assert model.password_hash == entity.password_hash.get_secret_value()
         assert model.is_active == entity.is_active
@@ -103,7 +103,7 @@ class TestUserMapper:
         assert model.username is None
         assert model.full_name is None
         assert model.avatar_url is None
-        assert model.counterparty_id is None
+        assert model.organization_id is None
 
 
 class TestInvitationMapper:
@@ -133,9 +133,9 @@ class TestInvitationMapper:
         assert entity.token == model.token
         assert entity.invited_by == model.invited_by
         assert entity.granted_roles == model.assigned_role
-        assert entity.counterparty_id == model.counterparty_id
+        assert entity.organization_id == model.counterparty_id
         assert entity.expires_at == model.expires_at
-        assert entity.used_at == model.used_at
+        assert entity.accepted_at == model.accepted_at
         assert entity.is_used == model.is_used
 
     def test_from_entity(self):
@@ -160,7 +160,7 @@ class TestInvitationMapper:
         assert model.token == entity.token
         assert model.invited_by == entity.invited_by
         assert model.assigned_role == entity.granted_roles
-        assert model.counterparty_id == entity.counterparty_id
+        assert model.organization_id == entity.counterparty_id
         assert model.expires_at == entity.expires_at
-        assert model.used_at == entity.used_at
+        assert model.accepted_at == entity.used_at
         assert model.is_used == entity.is_used

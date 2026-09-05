@@ -1,6 +1,3 @@
-data = {
-    "_id": "12345",
-    "meta": {"a": 1, "b": 2},
-}
+from src.shared.utils.text import camel_to_snake_case
 
-mongo_filter = {"_id": "12345"}
+print(camel_to_snake_case("createdAt"))

@@ -42,7 +42,7 @@ def _is_belong_to_counterparty(
 ) -> PermissionResult:
     """Относится ли пользователь к контрагенту."""
 
-    if subject.counterparty_id != counterparty_id:
+    if subject.organization_id != counterparty_id:
         return PermissionResult(False, "Customers can only work in their counterparty")
 
     return PermissionResult(True)

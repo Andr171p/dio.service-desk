@@ -1,9 +1,8 @@
-from typing import Any, ClassVar
+from typing import ClassVar
 
-from collections.abc import Mapping
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, delete, exists, select
+from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import Base
@@ -21,7 +20,7 @@ class SqlAlchemyRepository[EntityT: Entity, ModelT: Base]:
     model: type[ModelT]
     model_mapper: ModelMapper[EntityT, ModelT]
     search: SearchFunc | None = None
-    filterable_fields: ClassVar[Mapping[str, ColumnElement[Any]]] = {}
+    filterable_fields: ClassVar[tuple[str, ...]] = ()
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -49,7 +48,9 @@ class SqlAlchemyRepository[EntityT: Entity, ModelT: Base]:
         stmt = select(self.model)
 
         if query:
-            stmt = stmt.where(compile_filter(query, self.filterable_fields, self.search))
+            stmt = stmt.where(
+                compile_filter(self.model, query, self.filterable_fields, self.search),
+            )
 
         return await paginate(
             session=self._session,

@@ -8,7 +8,7 @@ from .registry import get_permission_policies
 def has_permission(identity: Identity, permission: Permission) -> bool:
     """Проверяет наличие конкретного права у субъекта авторизации."""
 
-    return permission.code in identity.permissions
+    return any(grant.permission == permission.code for grant in identity.grants)
 
 
 def can(identity: Identity, permission: Permission, resource: object | None = None) -> bool:
@@ -29,7 +29,16 @@ def can(identity: Identity, permission: Permission, resource: object | None = No
     if not (policies := get_permission_policies(permission)):
         return False
 
-    return any(policy(identity, resource) for _, policy in policies)
+    granted_scopes = {
+        grant.scope
+        for grant in identity.grants
+        if grant.permission == permission.code
+    }
+
+    return any(
+        scope in granted_scopes and policy(identity, resource)
+        for scope, policy in policies
+    )
 
 
 def authorize(identity: Identity, permission: Permission, resource: object | None = None) -> None:

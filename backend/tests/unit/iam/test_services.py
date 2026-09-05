@@ -154,9 +154,9 @@ class TestCreateTokensForUser:
         assert access_payload["email"] == user.email
         assert access_payload["role"] == user.role
 
-        if user.counterparty_id is not None:
+        if user.organization_id is not None:
             assert "organization_id" in access_payload
-            assert access_payload["organization_id"] == f"{user.counterparty_id}"
+            assert access_payload["organization_id"] == f"{user.organization_id}"
 
         # 4. Проверка refresh токена
         assert refresh_payload["sub"] == f"{user.id}"
@@ -346,7 +346,7 @@ class TestInvitationServiceSendInvitation:
         assert created_invitation.invited_by == invited_by
         assert created_invitation.granted_roles == assigned_role
         assert created_invitation.email == email
-        assert created_invitation.counterparty_id == counterparty_id
+        assert created_invitation.organization_id == counterparty_id
 
         # 3. Проверка отправки письма
         mock_mail_sender.send.assert_awaited_once()

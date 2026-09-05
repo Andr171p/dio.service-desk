@@ -43,7 +43,7 @@ def require_permissions(
 
     def dependency(identity: CurrentIdentity) -> Identity:
 
-        granted = identity.permissions
+        granted = {grant.permission for grant in identity.grants}
 
         if any_of:
             if required.isdisjoint(granted):

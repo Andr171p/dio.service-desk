@@ -171,7 +171,7 @@ def current_customer(created_customer):
         user_id=created_customer.id,
         email=created_customer.email,
         role=created_customer.role,
-        counterparty_id=created_customer.counterparty_id,
+        counterparty_id=created_customer.organization_id,
     )
 
 
@@ -234,7 +234,7 @@ class TestCreate:
         response = await ticket_service.create(data, current_support_agent)
 
         assert response.project_id == created_project.id
-        assert response.counterparty_id == created_project.counterparty_id
+        assert response.counterparty_id == created_project.organization_id
         assert response.number == "TESTPRJ-26-00000001"
 
     @pytest.mark.asyncio

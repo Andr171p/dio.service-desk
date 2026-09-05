@@ -74,7 +74,7 @@ class InMemoryUserRepository(InMemoryRepository[User]):
     async def get_customer_admins(self, counterparty_id: UUID) -> list[User]:
         return [
             user for user in self.data.values()
-            if user.counterparty_id == counterparty_id and user.role == UserRole.CUSTOMER_ADMIN
+            if user.organization_id == counterparty_id and user.role == UserRole.CUSTOMER_ADMIN
         ]
 
 
@@ -210,8 +210,8 @@ class InMemoryTicketRepository(InMemoryRepository[Ticket]):
                 tickets = [
                     ticket
                     for ticket in tickets
-                    if ticket.counterparty_id == scopes.counterparty_id
-                    or (ticket.project_id is not None and ticket.project_id in scopes.project_ids)
+                    if ticket.organization_id == scopes.counterparty_id
+                       or (ticket.project_id is not None and ticket.project_id in scopes.project_ids)
                 ]
             elif scopes.project_ids is not None:
                 tickets = [
@@ -235,7 +235,7 @@ class InMemoryTicketRepository(InMemoryRepository[Ticket]):
 
         if counterparty_id is not None:
             for ticket in self.data.values():
-                if ticket.counterparty_id == counterparty_id:
+                if ticket.organization_id == counterparty_id:
                     counter += 1
 
         return counter

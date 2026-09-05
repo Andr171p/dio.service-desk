@@ -315,7 +315,7 @@ class Invitation(Entity):
                 invitation_id=self.id,
                 email=self.email,
                 granted_roles=self.granted_roles,
-                counterparty_id=self.organization_id,
+                organization_id=self.organization_id,
                 invited_by=self.invited_by,
             )
         )

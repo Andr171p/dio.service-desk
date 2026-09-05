@@ -70,7 +70,7 @@ def upgrade() -> None:
     sa.Column('granted_roles', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('organization_id', sa.Uuid(), nullable=True),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('used_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('accepted_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_used', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),

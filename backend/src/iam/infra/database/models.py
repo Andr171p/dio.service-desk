@@ -3,7 +3,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, Index, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
@@ -26,10 +26,13 @@ class UserOrm(Base):
     password_hash: Mapped[StrUnique]
     is_active: Mapped[bool]
 
+    search_vector: Mapped[str] = mapped_column(TSVECTOR)
+
     memberships: Mapped[list["MembershipOrm"]] = relationship(back_populates="user")
 
     __table_args__ = (
         Index("ix_users_is_active", "is_active"),
+        Index("ix_users_search_vector", "search_vector", postgresql_using="gin"),
     )
 
 
@@ -111,9 +114,8 @@ class InvitationOrm(Base):
     organization_id: Mapped[UUID]
     expires_at: Mapped[DatatimeTz]
 
-    used_at: Mapped[DatetimeNull]
-    is_used: Mapped[bool]
+    accepted_at: Mapped[DatetimeNull]
 
     __table_args__ = (
-        Index("ix_invitations_organization_used", "organization_id", "is_used"),
+        Index("ix_invitations_organization_accepted", "organization_id", "accepted_at"),
     )

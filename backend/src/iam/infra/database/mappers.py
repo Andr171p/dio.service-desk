@@ -7,7 +7,7 @@ from src.iam.domain.vo import (
     SecretHash,
     Username,
 )
-from src.shared.infra.database import ModelMapper
+from src.shared.infra.database.postgres import ModelMapper
 
 from .models import (
     InvitationOrm,
@@ -204,7 +204,7 @@ class InvitationMapper(ModelMapper[Invitation, InvitationOrm]):
             granted_roles=set(model.granted_roles),
             organization_id=model.organization_id,
             expires_at=model.expires_at,
-            used_at=model.used_at,
+            used_at=model.accepted_at,
             is_used=model.is_used,
         )
 

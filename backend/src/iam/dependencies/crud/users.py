@@ -3,20 +3,15 @@ from typing import Annotated, Any
 from fastapi import Depends
 
 from src.iam.application.builders import build_user_response
-from src.iam.application.dtos import (
-    CreateUserDTO,
-    UpdateUserDTO,
-    UserQueryParamFilters,
-    UserResponse,
-)
+from src.iam.application.dtos import CreateUserDTO, UpdateUserDTO, UserResponse
 from src.iam.dependencies.identity import CurrentIdentity
 from src.iam.dependencies.repos import UserRepositoryDep
 from src.iam.domain.entities import User
 from src.iam.domain.vo import FullName, Username
 from src.shared.application.crud import Crud
-from src.shared.application.dtos import Page
-from src.shared.application.repos import get_or_raise_404
-from src.shared.dependencies import PaginationDep, TransactionDep
+from src.shared.application.dtos import Page, QueryDTO
+from src.shared.application.utils import get_or_raise_404
+from src.shared.dependencies import PaginationDep, SortDep, TransactionDep
 from src.shared.domain.helpers import apply_changes
 
 UserCrud = Crud[
@@ -53,15 +48,18 @@ async def get_current_user(
     return build_user_response(user)
 
 
-async def get_users_list(
+async def search_users(
         pagination: PaginationDep,
-        filters: Annotated[UserQueryParamFilters, Depends()],
+        sort: SortDep,
+        query: QueryDTO,
         user_repo: UserRepositoryDep,
 ) -> Page[UserResponse]:
-    page = await user_repo.find(pagination, filters=filters)
+    page = await user_repo.find(pagination=pagination, query=query, sort=sort)
     return page.to_response(build_user_response)
 
 
 UserCrudDep = Annotated[UserCrud, Depends(get_user_crud)]
 current_user_depends = Depends(get_current_user)
-users_list_depends = Depends(get_users_list)
+search_users_depends = Depends(search_users)
+
+__all__ = ["UserCrudDep", "current_user_depends", "search_users_depends"]

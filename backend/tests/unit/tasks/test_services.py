@@ -80,7 +80,7 @@ async def created_ticket(fake_ticket_repo, created_project):
         created_by=uuid4(),
         created_by_role=UserRole.CUSTOMER,
         project_id=created_project.id,
-        counterparty_id=created_project.counterparty_id,
+        counterparty_id=created_project.organization_id,
     )
     await fake_ticket_repo.create(ticket)
 

@@ -58,7 +58,7 @@ class TestTicketDataLoader:
         user_ids = reporter_ids | assignee_ids
 
         counterparty_ids = {
-            ticket.counterparty_id for ticket in ticket_list if ticket.counterparty_id is not None
+            ticket.organization_id for ticket in ticket_list if ticket.organization_id is not None
         }
         project_ids = {
             ticket.project_id for ticket in ticket_list if ticket.project_id is not None

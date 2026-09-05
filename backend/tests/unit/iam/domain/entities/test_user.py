@@ -57,7 +57,7 @@ def test_create_customer_with_full_data(valid_email, valid_password_hash, counte
     assert isinstance(user.full_name, FullName)
     assert str(user.full_name) == "Анна Петрова"
     assert user.role == UserRole.CUSTOMER_ADMIN
-    assert user.counterparty_id == counterparty_id
+    assert user.organization_id == counterparty_id
 
 
 def test_create_customer_without_counterparty_raises_error(valid_email, valid_password_hash):
@@ -99,7 +99,7 @@ def test_create_support_manager(valid_email, valid_password_hash):
     assert user.username == "support-lead"
     assert isinstance(user.full_name, FullName)
     assert str(user.full_name) == "Мария Иванова"
-    assert user.counterparty_id is None
+    assert user.organization_id is None
 
 
 def test_direct_creation_agent_without_counterparty(valid_email, valid_password_hash):

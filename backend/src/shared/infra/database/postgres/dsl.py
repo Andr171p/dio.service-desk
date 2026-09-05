@@ -1,6 +1,6 @@
 from typing import Any
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Collection, Mapping
 
 from sqlalchemy import ColumnElement, Select, UnaryExpression, and_, asc, desc, not_, or_
 
@@ -14,15 +14,33 @@ from src.shared.application.dsl import (
     Sort,
     SortDirection,
 )
+from src.shared.utils.text import camel_to_snake_case
 
 from .types import SearchFunc
 
 type SortFunc = Callable[[ColumnElement[Any]], UnaryExpression[Any]]
 
 
-def compile_filter(
+def _get_column[ModelT: Base](
+    model: type[ModelT],
+    field: str,
+    allowed_fields: Collection[str],
+) -> ColumnElement[Any]:
+    if field not in allowed_fields:
+        raise ValueError(f"Unknown filter field: '{field}'.")
+
+    field_name = camel_to_snake_case(field)
+
+    try:
+        return getattr(model, field_name)
+    except AttributeError:
+        raise ValueError(f"Filter field '{field}' is not supported by model.") from None
+
+
+def compile_filter[ModelT: Base](
+    model: type[ModelT],
     filter_: Filter,
-    fields: Mapping[str, ColumnElement[Any]],
+    allowed_fields: Collection[str],
     search: SearchFunc | None = None,
 ) -> ColumnElement[bool]:
     """
@@ -34,23 +52,24 @@ def compile_filter(
     """
 
     if isinstance(filter_, Condition):
-        return _compile_condition(filter_, fields)
+        return _compile_condition(model, filter_, allowed_fields)
 
     if isinstance(filter_, Search) and search is None:
         raise ValueError("Full-text search is not supported.")
 
     if isinstance(filter_, Group):
-        return _compile_group(filter_, fields, search)
+        return _compile_group(filter_, allowed_fields, search)
 
     if isinstance(filter_, Negation):
-        return not_(compile_filter(filter_.filter_, fields, search))
+        return not_(compile_filter(filter_.filter_, allowed_fields, search))
 
     raise ValueError(f"Unsupported filter type: {type(filter_)}")
 
 
-def _compile_condition(  # noqa: C901, PLR0911
+def _compile_condition[ModelT: Base](  # noqa: C901, PLR0911
+    model: type[ModelT],
     condition: Condition,
-    fields: Mapping[str, ColumnElement[Any]],
+    allowed_fields: Collection[str],
 ) -> ColumnElement[bool]:
     """Компилирует одиночное атомарное условие (Condition) в выражение SQLAlchemy.
 
@@ -58,8 +77,7 @@ def _compile_condition(  # noqa: C901, PLR0911
     в соответствующие операторы сравнения или методы колонок SQLAlchemy.
     """
 
-    if (column := fields.get(condition.field)) is None:
-        raise ValueError(f"Unknown filter field: '{condition.field}'.")
+    column = _get_column(model, condition.field, allowed_fields)
 
     match condition.op:
         case "$eq":

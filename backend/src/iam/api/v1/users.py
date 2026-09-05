@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from src.iam.application import permissions
 from src.iam.application.dtos import UpdateUserDTO, UserResponse
-from src.iam.dependencies import CurrentIdentity, require_authentication
-from src.iam.dependencies.crud import UserCrudDep, current_user_depends, users_list_depends
+from src.iam.dependencies import CurrentIdentity, require_authentication, require_permissions
+from src.iam.dependencies.crud.users import UserCrudDep, current_user_depends, search_users_depends
 from src.shared.application.dtos import Page
 
 router = APIRouter(prefix="/users", tags=["Пользователи | Users"])
@@ -33,12 +34,12 @@ async def update_me(
 
 
 @router.post(
-    path="/search",
+    path="/query",
     status_code=status.HTTP_200_OK,
     dependencies=[require_authentication],
     summary="Найти пользователей",
 )
-async def search_users(users: Page[UserResponse] = users_list_depends) -> Page[UserResponse]:
+async def search_users(users: Page[UserResponse] = search_users_depends) -> Page[UserResponse]:
     return users
 
 
@@ -50,3 +51,13 @@ async def search_users(users: Page[UserResponse] = users_list_depends) -> Page[U
 )
 async def get_user(user_id: UUID, crud: UserCrudDep) -> UserResponse:
     return await crud.read(user_id)
+
+
+@router.delete(
+    path="/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_permissions(permissions.users.DEACTIVATE))],
+    summary="Удалить пользователя",
+)
+async def delete_user(user_id: UUID, crud: UserCrudDep) -> None:
+    return await crud.delete(user_id)

@@ -9,12 +9,10 @@ from .vo import Email
 
 @dataclass(frozen=True, kw_only=True)
 class UserInvited(Event):
-    """
-    Пользователю отправлено приглашение.
-    """
+    """Пользователю отправлено приглашение."""
 
     invitation_id: UUID
     email: Email
     granted_roles: set[RoleId]
-    counterparty_id: UUID | None = None
+    organization_id: UUID | None = None
     invited_by: UUID
