@@ -2,47 +2,61 @@ from typing import ClassVar
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from enum import StrEnum
 
-from pydantic import EmailStr
+from src.shared.domain.vo import ValueObject
 
-from ...iam.domain.vo import FullName
-from ...shared.domain.vo import ValueObject
-
-
-class OrganizationKind(StrEnum):
-    """
-    Вид организации в системе.
-
-    - `platform` - организация предоставляющая услуги;
-    - `customer` - внешний заказчик;
-    - `partner` - помогает внедрять и обслуживать систему.
-    """
-
-    PLATFORM = "platform"
-    CUSTOMER = "customer"
-    PARTNER = "partner"
+_RU_FULL_LENGTH = 11
+_RU_LOCAL_LENGTH = 10
 
 
-class CounterpartyType(StrEnum):
-    """Типы контрагентов"""
+def _normalize_ru_phone(raw: str) -> str:
+    """Очищает строку и приводит российский номер к формату '7XXXXXXXXXX'."""
 
-    INDIVIDUAL = "Физическое лицо"
-    INDIVIDUAL_ENTREPRENEUR = "Индивидуальный предприниматель"
-    LEGAL_ENTITY = "Юридическое лицо"
-    FOREIGN_LEGAL_ENTITY = "Иностранное юридическое лицо"
-    BRANCH = "Обособленное подразделение"
+    digits = "".join(char for char in raw if char.isdigit())
+
+    if not digits:
+        raise ValueError("Phone number cannot be empty and must contain digits.")
+
+    if digits.startswith("8") and len(digits) == _RU_FULL_LENGTH:
+        digits = "7" + digits[1:]
+
+    elif digits.startswith("9") and len(digits) == _RU_LOCAL_LENGTH:
+        digits = "7" + digits
+
+    return digits
+
+
+class AddressType(StrEnum):
+    LEGAL = "legal"
+    ACTUAL = "actual"
+    POSTAL = "postal"
+
+
+@dataclass(frozen=True, slots=True)
+class Address(ValueObject):
+    """"""
+
+    type: AddressType
+
+    country: str
+    postal_code: str | None = None
+    region: str | None = None
+    city: str | None = None
+    street: str | None = None
+    building: str | None = None
+    apartment: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class Inn(ValueObject):
-    """
-    ИНН — Идентификационный номер налогоплательщика (10 или 12 цифр)
-    """
+    """ИНН - Идентификационный номер налогоплательщика (10 или 12 цифр)."""
 
-    LENGTHS: ClassVar[tuple[int, ...]] = (10, 12)
+    LEGAL_ENTITY_LEN: ClassVar[int] = 10
+    INDIVIDUAL_LEN: ClassVar[int] = 12
 
-    value: str = field(compare=True, hash=True, repr=False)
+    value: str = field(compare=True, hash=True)
 
     def __post_init__(self) -> None:
         cleaned = self.value.strip().replace(" ", "").replace("-", "")
@@ -50,70 +64,53 @@ class Inn(ValueObject):
         if not cleaned.isdigit():
             raise ValueError("INN can contains only digits")
 
-        if len(cleaned) not in self.LENGTHS:
+        if len(cleaned) not in (self.LEGAL_ENTITY_LEN, self.INDIVIDUAL_LEN):
             raise ValueError(f"INN must contain 10 or 12 digits (received {len(cleaned)})")
 
-        object.__setattr__(self, "string", cleaned)
-
-    def __str__(self) -> str:
-        v = self.value
-        if len(v) == self.LENGTHS[0]:
-            return f"{v[:4]} {v[4:]}"
-        return f"{v[:4]} {v[4:8]} {v[8:]}"
-
-    def __repr__(self) -> str:
-        return f"Inn({self.value!r})"
+        object.__setattr__(self, "value", cleaned)
 
     @property
     def is_legal_entity(self) -> bool:
-        """Является ли юридическим лицом"""
+        """Является ли юридическим лицом (10 цифр)."""
 
-        return len(self.value) == self.LENGTHS[0]
+        return len(self.value) == self.LEGAL_ENTITY_LEN
 
     @property
     def is_individual(self) -> bool:
-        """Является ли индивидуальным предпринимателем"""
+        """Является ли физическим лицом / ИП (12 цифр)."""
 
-        return len(self.value) == self.LENGTHS[1]
+        return len(self.value) == self.INDIVIDUAL_LEN
 
 
 @dataclass(frozen=True, slots=True)
 class Kpp(ValueObject):
-    """
-    КПП — Код причины постановки на учёт (9 цифр)
-    """
+    """КПП - Код причины постановки на учёт (9 символов: цифры и заглавные буквы)."""
 
     LENGTH: ClassVar[int] = 9
+    VALID_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^\d{4}[0-9A-ZА-Я]{2}\d{3}$")
 
-    value: str = field(compare=True, hash=True, repr=False)
+    value: str = field(compare=True, hash=True)
 
     def __post_init__(self) -> None:
-        cleaned = self.value.strip().replace(" ", "").replace("-", "")
+        cleaned = self.value.strip().replace(" ", "").replace("-", "").upper()
 
-        if not cleaned.isdigit():
-            raise ValueError("KPP must contains only digits")
+        if not self.VALID_PATTERN.match(cleaned):
+            raise ValueError(
+                "KPP must be 9 alphanumeric characters "
+                f"matching FNS format (received: {self.value})",
+            )
 
-        if len(cleaned) != self.LENGTH:
-            raise ValueError(f"KPP must contain exactly 9 digits (received {len(cleaned)})")
-
-        object.__setattr__(self, "string", cleaned)
-
-    def __str__(self) -> str:
-        v = self.value
-        return f"{v[:4]}/{v[4:6]}/{v[6:]}"
-
-    def __repr__(self) -> str:
-        return f"Kpp({self.value!r})"
+        object.__setattr__(self, "value", cleaned)
 
 
 @dataclass(frozen=True, slots=True)
 class Okpo(ValueObject):
-    """
-    ОКПО — Общероссийский классификатор предприятий и организаций
-    (8 цифр — юридического лица, 10 цифр — ИП и обособленные подразделения)
+    """ОКПО - Общероссийский классификатор предприятий и организаций
+    (8 цифр - юридического лица, 10 цифр — ИП и обособленные подразделения).
     """
 
-    LENGTHS: ClassVar[tuple[int, ...]] = (8, 10)
+    LEGAL_ENTITY_LEN: ClassVar[int] = 8
+    INDIVIDUAL_OR_BRANCH_LEN: ClassVar[int] = 10
 
     value: str = field(compare=True, hash=True, repr=False)
 
@@ -121,137 +118,140 @@ class Okpo(ValueObject):
         cleaned = self.value.strip().replace(" ", "").replace("-", "")
 
         if not cleaned.isdigit():
-            raise ValueError("OKPO must contains only digits")
+            raise ValueError("OKPO must contain only digits")
 
-        if len(cleaned) not in self.LENGTHS:
-            raise ValueError(f"OKPO must contains 8 or 10 digits (received {len(cleaned)})")
+        if len(cleaned) not in (self.LEGAL_ENTITY_LEN, self.INDIVIDUAL_OR_BRANCH_LEN):
+            raise ValueError(f"OKPO must contain 8 or 10 digits (received {len(cleaned)})")
 
-        object.__setattr__(self, "string", cleaned)
-
-    def __str__(self) -> str:
-        return self.value
-
-    def __repr__(self) -> str:
-        return f"Okpo({self.value!r})"
+        object.__setattr__(self, "value", cleaned)
 
     @property
     def is_legal_entity(self) -> bool:
-        """Принадлежит ли юридическому лицу"""
+        """Принадлежит ли юридическому лицу."""
 
-        return len(self.value) == self.LENGTHS[0]
+        return len(self.value) == self.LEGAL_ENTITY_LEN
 
     @property
     def is_individual_or_branch(self) -> bool:
-        """Является ИП или обособленным подразделением"""
+        """Является ИП или обособленным подразделением."""
 
-        return len(self.value) == self.LENGTHS[1]
-
-
-@dataclass(frozen=True, slots=True)
-class Phone:
-    """
-    Номер телефона (российский формат, приводится к формату к +7(XXX)XXX-XX-XX)
-    """
-
-    value: str = field(compare=True, hash=True, repr=False)
-
-    # Российские мобильные и городские номера
-    PATTERN: ClassVar[re.Pattern[str]] = re.compile(
-        r"^\+?7\d{10}$|^8\d{10}$|^9\d{9}$|^7\d{10}$"
-    )
-    # Длина после нормализации (+7 + 10 символов)
-    NORMALIZED_LENGTH: ClassVar[int] = 12
-    # Возможные длины
-    LENGTHS: ClassVar[tuple[int, ...]] = (10, 11)
-
-    def __post_init__(self) -> None:
-        digits = "".join(c for c in self.value if c.isdigit())
-        if not digits:
-            raise ValueError("Phone number cannot be empty")
-
-        if digits.startswith("8"):
-            normalized = "+7" + digits[1:]
-        elif digits.startswith(("7", "9")):
-            if len(digits) == self.LENGTHS[0]:
-                normalized = "+7" + digits
-            elif len(digits) == self.LENGTHS[1]:
-                normalized = "+7" + digits[1:]
-            else:
-                normalized = "+7" + digits
-        else:
-            normalized = "+7" + digits
-
-        if not self.PATTERN.match(normalized):
-            raise ValueError(
-                "Invalid phone number. "
-                "Excepted russian number: +7XXXXXXXXXX or 8XXXXXXXXXX"
-            )
-
-        if len(normalized) != self.NORMALIZED_LENGTH:
-            raise ValueError(
-                f"Phone number must contains 10 digits after +7 (received {len(digits)})"
-            )
-
-        object.__setattr__(self, "string", normalized)
-
-    def __str__(self) -> str:
-        return f"+7 ({self.value[2:5]}) {self.value[5:8]}-{self.value[8:10]}-{self.value[10:12]}"
-
-    def __repr__(self) -> str:
-        return f"Phone({self.value!r})"
+        return len(self.value) == self.INDIVIDUAL_OR_BRANCH_LEN
 
 
 @dataclass(frozen=True, slots=True)
-class ContactPerson(ValueObject):
-    """
-    Контактное лицо контрагента (физическое лицо)
-    """
+class PhoneNumber:
+    """Номер телефона (российский формат, хранится как 11 цифр начиная с 7)."""
 
-    AVAILABLE_MESSENGERS: ClassVar[frozenset[str]] = frozenset({
-        "telegram", "whatsapp", "vk", "max", "signal", "skype",
-    })
+    VALID_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^7\d{10}$")
 
-    full_name: FullName
-    phone: Phone
-    email: EmailStr
-    messengers: dict[str, str] = field(default_factory=dict)
+    value: str = field(compare=True, hash=True)
 
     def __post_init__(self) -> None:
-        disabled = set(self.messengers) - self.AVAILABLE_MESSENGERS
-        if disabled:
+        normalized = _normalize_ru_phone(self.value)
+
+        if not self.VALID_PATTERN.match(normalized):
             raise ValueError(
-                f"Disabled messengers: {', '.join(disabled)}. "
-                f"Available: {', '.join(sorted(self.AVAILABLE_MESSENGERS))}"
+                f"Invalid Russian phone number format (received: {self.value}). "
+                "Expected formats: +7XXXXXXXXXX, 8XXXXXXXXXX or 9XXXXXXXXXX",
             )
 
-        for key, value in self.messengers.items():
-            if not value or not isinstance(value, str):
-                raise ValueError(f"Value for {key} must be non empty string")
+        object.__setattr__(self, "value", normalized)
 
-    def __repr__(self) -> str:
-        return (
-            f"ContactPerson("
-            f"full_name={self.full_name!r}, "
-            f"phone={self.phone!r}, "
-            f"email={self.email!r}, "
-            f"messengers={self.messengers!r})"
-        )
 
-    @classmethod
-    def create(
-            cls,
-            first_name: str,
-            last_name: str,
-            middle_name: str | None,
-            phone: str,
-            email: str,
-            messengers: dict[str, str],
-    ) -> "ContactPerson":
-        return cls(
-            full_name=FullName(
-                f"{last_name} {first_name} {middle_name if middle_name is not None else ''}"
-            ),
-            phone=Phone(phone),
-            email=email,
-            messengers=messengers,
-        )
+class BusinessSubjectType(StrEnum):
+    INDIVIDUAL = "individual"
+    INDIVIDUAL_ENTREPRENEUR = "individual_entrepreneur"
+    LEGAL_ENTITY = "legal_entity"
+    FOREIGN_LEGAL_ENTITY = "foreign_legal_entity"
+
+
+@dataclass(frozen=True, slots=True)
+class BusinessProfile(ValueObject):
+    """"""
+
+    subject_type: BusinessSubjectType
+
+    legal_name: str
+    short_name: str | None = None
+
+    inn: Inn | None = None
+    kpp: Kpp | None = None
+
+    ogrn: str | None = None
+    ogrnip: str | None = None
+
+    okpo: Okpo | None = None
+
+    registered_at: date | None = None
+
+    def __post_init__(self) -> None:
+        _validate_business_profile(self)
+
+
+def _validate_business_profile(profile: BusinessProfile) -> None:
+    """"""
+
+    if not profile.legal_name.strip():
+        raise ValueError("Legal name cannot be empty.")
+
+    match profile.subject_type:
+        case BusinessSubjectType.INDIVIDUAL:
+            _validate_individual(profile)
+
+        case BusinessSubjectType.INDIVIDUAL_ENTREPRENEUR:
+            _validate_individual_entrepreneur(profile)
+
+        case BusinessSubjectType.LEGAL_ENTITY:
+            _validate_legal_entity(profile)
+
+        case BusinessSubjectType.FOREIGN_LEGAL_ENTITY:
+            _validate_foreign_legal_entity(profile)
+
+
+def _validate_individual(profile: BusinessProfile) -> None:
+    """"""
+
+    if profile.inn is not None and not profile.inn.is_individual:
+        raise ValueError("Individual must have a 12-digit INN.")
+
+    if profile.kpp is not None:
+        raise ValueError("Individual cannot have KPP.")
+
+    if profile.ogrn is not None:
+        raise ValueError("Individual cannot have OGRN.")
+
+    if profile.ogrnip is not None:
+        raise ValueError("Individual cannot have OGRNIP.")
+
+
+def _validate_individual_entrepreneur(profile: BusinessProfile) -> None:
+    if profile.inn is not None and not profile.inn.is_individual:
+        raise ValueError("Individual entrepreneur must have a 12-digit INN.")
+
+    if profile.kpp is not None:
+        raise ValueError("Individual entrepreneur cannot have KPP.")
+
+    if profile.ogrn is not None:
+        raise ValueError("Individual entrepreneur cannot have OGRN.")
+
+    if profile.ogrnip is None:
+        raise ValueError("Individual entrepreneur must have OGRNIP.")
+
+
+def _validate_legal_entity(profile: BusinessProfile) -> None:
+    if profile.inn is not None and not profile.inn.is_legal_entity:
+        raise ValueError("Legal entity must have a 10-digit INN.")
+
+    if profile.ogrn is None:
+        raise ValueError("Legal entity must have OGRN.")
+
+    if profile.ogrnip is not None:
+        raise ValueError("Legal entity cannot have OGRNIP.")
+
+
+def _validate_foreign_legal_entity(profile: BusinessProfile) -> None:
+    if profile.kpp is not None and profile.inn is None:
+        raise ValueError("Foreign legal entity cannot have KPP without INN.")
+
+    if profile.ogrnip is not None:
+        raise ValueError("Foreign legal entity cannot have OGRNIP.")

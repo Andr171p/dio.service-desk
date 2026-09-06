@@ -1,217 +1,78 @@
-from typing import Self
+from typing import Annotated, Any
 
 from dataclasses import dataclass, field
 from uuid import UUID
 
-from pydantic import EmailStr
+from typing_extensions import Doc
 
-from src.shared.domain.entities import AggregateRoot
+from src.iam.domain.vo import Email, FullName
+from src.shared.domain.entities import AggregateRoot, Entity
 from src.shared.domain.exceptions import InvariantViolationError
 from src.shared.utils.time import current_datetime
 
-from .vo import ContactPerson, CounterpartyType, Inn, Kpp, Okpo, OrganizationKind, Phone
+from .vo import Address, BusinessProfile, PhoneNumber
 
-INDIVIDUAL_INN_LENGTH = 12
-LEGAL_INN_LENGTH = 10
+
+@dataclass(kw_only=True)
+class ContactPerson(Entity):
+    """
+    Контактное лицо организации.
+    Используется для связи с контрагентами, отправки уведомлений
+    и сопоставления с учетными записями пользователей в системе.
+    """
+
+    full_name: FullName
+
+    phone: PhoneNumber | None = None
+    email: Email | None = None
+    additional_info: dict[str, Any] = field(default_factory=dict)
+
+    user_id: Annotated[UUID | None, Doc("Идентификатор реального пользователя.")] = None
+
+    is_primary: Annotated[bool, Doc("Является ли контакт основным.")] = False
+    is_active: bool = True
+
+
+def _validate_organization_contacts(contacts: dict[UUID, ContactPerson]) -> None:
+    """"""
+
+    primary_contacts = sum(
+        contact.is_primary and contact.is_active for contact in contacts.values()
+    )
+
+    if primary_contacts > 1:
+        raise InvariantViolationError("Organization cannot have multiple primary contacts.")
+
+    if any(contact.is_primary and not contact.is_active for contact in contacts.values()):
+        raise InvariantViolationError("Inactive contact cannot be primary.")
 
 
 @dataclass(kw_only=True)
 class Organization(AggregateRoot):
-    """
-    Контрагент - компания с которой ведётся работа (заказчик).
-    """
-
-    type_: CounterpartyType
-    kind: OrganizationKind
+    """"""
 
     name: str
-    legal_name: str
-    inn: Inn
-    kpp: Kpp | None = None
-    okpo: Okpo | None = None
-    phone: Phone
-    email: EmailStr
-    address: str | None = None
-    avatar_url: str | None = None
-    contact_persons: list[ContactPerson] = field(default_factory=list)
+    email: Email | None = None
+    phone: PhoneNumber | None = None
+
+    business_profile: BusinessProfile
+    addresses: set[Address] = field(default_factory=set)
+    contacts: dict[UUID, ContactPerson] = field(default_factory=dict)
+
+    parent_id: UUID | None = None
     is_active: bool = True
 
-    # Поля для master-slave иерархии (удобно для филиалов)
-    parent_id: UUID | None = None
+    def __post_init__(self) -> None:
+        _validate_organization_contacts(self.contacts)
 
-    def __post_init__(self) -> None:  # noqa: C901
+    def add_contact(self, contact: ContactPerson) -> None:
+        if contact.id in self.contacts:
+            raise InvariantViolationError(f"Contact {contact.id} already belongs to organization.")
 
-        # 1. Проверка корректности длины ИНН в зависимости от типа контрагента
-        inn_length = len(self.inn.value)
-        match self.type_:
-            case CounterpartyType.INDIVIDUAL | CounterpartyType.INDIVIDUAL_ENTREPRENEUR:
-                if inn_length != INDIVIDUAL_INN_LENGTH:
-                    raise InvariantViolationError(
-                        "For an individual, the IIN must contain 12 digits "
-                        f"(received {inn_length})"
-                    )
-            case CounterpartyType.LEGAL_ENTITY | CounterpartyType.BRANCH:
-                if inn_length != LEGAL_INN_LENGTH:
-                    raise InvariantViolationError(
-                        "For a legal workflow, the IIN must contain 10 digits "
-                        f"(received {inn_length})"
-                    )
+        if contact.is_primary:
+            ...
 
-        # 3. Проверка наличия КПП
-        if self.type_ in {CounterpartyType.LEGAL_ENTITY, CounterpartyType.BRANCH}:
-            if self.kpp is None:
-                raise InvariantViolationError(
-                    f"For counterparty type '{self.type_.value}' KPP required"
-                )
-        elif self.kpp is not None:
-            raise InvariantViolationError(
-                f"For counterparty type {self.type_.value} KPP not required"
-            )
-
-        # 4. Обособленное подразделение должно быть привязано к основному контрагенту
-        if self.type_ == CounterpartyType.BRANCH and self.parent_id is None:
-            raise InvariantViolationError(
-                "It is necessary to specify the ID of the head counterparty "
-                "to attach a branch. Missing parent_id string."
-            )
-
-        # 5. Телефон и электронная почат контактного лица должны быть уникальны
-        seen_contact_data = set()
-        for contact_person in self.contact_persons:
-            contact_data = (contact_person.phone, contact_person.email)
-            if contact_data in seen_contact_data:
-                raise InvariantViolationError(
-                    "Combination of phone number and email must be unique for contact persons"
-                )
-
-            seen_contact_data.add(contact_data)
-
-    @property
-    def is_head(self) -> bool:
-        """Является ли контрагент основным"""
-
-        return self.parent_id is None
-
-    @property
-    def is_branch(self) -> bool:
-        """Является ли контрагент дочерним (подчинённым основному)"""
-
-        return self.parent_id is not None
-
-    def edit(
-            self,
-            *,
-            name: str | None = None,
-            legal_name: str | None = None,
-            okpo: Okpo | None = None,
-            phone: Phone | None = None,
-            email: EmailStr | None = None,
-            address: str | None = None,
-    ) -> None:
-        """
-        Редактирование основных данных контрагента.
-        Нельзя изменить тип, ИНН, КПП или parent_id.
-        """
-
-        is_edited = False
-
-        if name is not None and name.strip() and name.strip() != self.name:
-            self.name = name.strip()
-            is_edited = True
-
-        if legal_name is not None and legal_name.strip() and legal_name.strip() != self.name:
-            self.legal_name = legal_name.strip()
-            is_edited = True
-
-        if okpo is not None and okpo != self.okpo:
-            self.okpo = okpo
-            is_edited = True
-
-        if phone is not None and phone != self.phone:
-            self.phone = phone
-            is_edited = True
-
-        if email is not None and email != self.email:
-            self.email = email
-            is_edited = True
-
-        if address is not None and address.strip() and address.strip() != self.address:
-            self.address = address.strip()
-            is_edited = True
-
-        if is_edited:
-            self.updated_at = current_datetime()
-
-    def create_branch(
-            self,
-            name: str,
-            legal_name: str,
-            kpp: str,
-            phone: str,
-            email: EmailStr,
-            okpo: str | None = None,
-            address: str | None = None,
-    ) -> "Organization":
-        """Создание обособленного подразделения с привязкой к контрагенту"""
-
-        if self.type_ != CounterpartyType.LEGAL_ENTITY:
-            raise InvariantViolationError(
-                "It is impossible to assign a branch to a non-legal workflow"
-            )
-
-        return Organization(
-            type_=CounterpartyType.BRANCH,
-            name=name,
-            legal_name=legal_name,
-            inn=self.inn,
-            kpp=Kpp(kpp),
-            okpo=None if okpo is None else Okpo(okpo),
-            phone=Phone(phone),
-            email=email,
-            address=address,
-            parent_id=self.id
-        )
-
-    def add_contact_person(
-            self,
-            first_name: str,
-            last_name: str,
-            phone: str,
-            email: str,
-            middle_name: str | None = None,
-            messengers: dict[str, str] | None = None,
-    ) -> Self:
-        """Добавления контактного лица"""
-
-        # Проверка, нет ли такого же телефона и email у добавленных контактных лиц
-        for contact_person in self.contact_persons:
-            if contact_person.phone == Phone(phone) and contact_person.email == email:
-                raise ValueError(
-                    f"Contact person with phone - '{phone}' and email - '{email}' already exists"
-                )
-
-        self.contact_persons.append(
-            ContactPerson.create(
-                first_name=first_name,
-                last_name=last_name,
-                middle_name=middle_name,
-                phone=phone,
-                email=email,
-                messengers=messengers,
-            )
-        )
+        self.contacts[contact.id] = contact
         self.updated_at = current_datetime()
 
-    def remove_contact_person(self, phone: Phone, email: str) -> None:
-        """Удаление контактного лица"""
-
-        target = None
-
-        for i, contact_person in enumerate(self.contact_persons):
-            if contact_person.phone == phone and contact_person.email == email:
-                target = i
-                break
-
-        if target is not None:
-            self.contact_persons.pop(target)
-            self.updated_at = current_datetime()
+    def remove_contact(self, contact_id: UUID) -> None: ...
