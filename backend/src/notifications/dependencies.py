@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..core.broker import rabbit_broker
+from ..core.rabbit import rabbit_broker
 from ..iam.dependencies import UserRepoDep
 from ..projects.dependencies import ProjectMemberRepoDep
 from ..shared.dependencies import SessionDep, get_mail_sender

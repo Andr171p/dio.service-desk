@@ -1,7 +1,7 @@
 from fastapi import status
 
 
-class AppError(Exception):
+class DomainError(Exception):
     """Базовая ошибка приложения - от него наследуются все доменные исключения"""
 
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -21,41 +21,36 @@ class AppError(Exception):
         super().__init__(self.message)
 
 
-class DatabaseError(AppError):
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    error_code = "DATABASE_ERROR"
-
-
-class NotFoundError(AppError):
+class NotFoundError(DomainError):
     status_code = status.HTTP_404_NOT_FOUND
     error_code = "RESOURCE_NOT_FOUND"
 
 
-class InvariantViolationError(AppError):
+class InvariantViolationError(DomainError):
     status_code = status.HTTP_409_CONFLICT
     error_code = "INVARIANT_VIOLATION"
 
 
-class InvalidStateError(AppError):
+class InvalidStateError(DomainError):
     status_code = status.HTTP_409_CONFLICT
     error_code = "INVALID_STATE"
 
 
-class AlreadyExistsError(AppError):
+class AlreadyExistsError(DomainError):
     status_code = status.HTTP_409_CONFLICT
     error_code = "ALREADY_EXISTS"
 
 
-class EmailSendingFailedError(AppError):
+class EmailSendingFailedError(DomainError):
     status_code = status.HTTP_502_BAD_GATEWAY
     error_code = "EMAIL_SENDING_FAILED"
 
 
-class RateLimitExceededError(AppError):
+class RateLimitExceededError(DomainError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     error_code = "RATE_LIMIT_EXCEEDED"
 
 
-class UnsupportedOperationError(AppError):
+class UnsupportedOperationError(DomainError):
     status_code = status.HTTP_405_METHOD_NOT_ALLOWED
     error_code = "UNSUPPORTED_OPERATION"
