@@ -10,6 +10,10 @@ TIMEZONE = ZoneInfo("Asia/Yekaterinburg")
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_FILE = BASE_DIR / ".env"
 
+INSTALLED_MODULES: tuple[str, ...] = (  # Добавь сюда модуль который готов к использованию
+    "iam",
+)
+
 load_dotenv(ENV_FILE)
 
 
